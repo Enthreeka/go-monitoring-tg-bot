@@ -9,6 +9,13 @@ var (
 	ErrIsNotAdmin = NewError("User is not an admin", errors.New("not_admin"))
 )
 
+var (
+	ErrUniqueViolation     = NewError("Violation must be unique", errors.New("non_unique_value"))
+	ErrForeignKeyViolation = NewError("Foreign Key Violation", errors.New("foreign_key_violation "))
+	ErrNoRows              = NewError("No rows in result set", errors.New("no_rows"))
+	ErrNotFound            = NewError("Tasks not found", errors.New("not_found"))
+)
+
 type BotError struct {
 	Msg string `json:"message"`
 	Err error  `json:"-"`

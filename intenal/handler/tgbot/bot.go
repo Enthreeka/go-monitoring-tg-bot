@@ -2,6 +2,8 @@ package tgbot
 
 import (
 	"context"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
+	callbackQuery "github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot/callback"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"runtime/debug"
@@ -12,7 +14,7 @@ import (
 type ViewFunc func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error
 
 type Bot struct {
-	api *tgbotapi.BotAPI
+	bot *tgbotapi.BotAPI
 	log *logger.Logger
 
 	cmdView      map[string]ViewFunc
@@ -21,9 +23,9 @@ type Bot struct {
 	mu sync.RWMutex
 }
 
-func NewBot(api *tgbotapi.BotAPI, log *logger.Logger) *Bot {
+func NewBot(bot *tgbotapi.BotAPI, log *logger.Logger) *Bot {
 	return &Bot{
-		api: api,
+		bot: bot,
 		log: log,
 	}
 }
@@ -48,7 +50,7 @@ func (b *Bot) Run(ctx context.Context) error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates := b.api.GetUpdatesChan(u)
+	updates := b.bot.GetUpdatesChan(u)
 	for {
 		select {
 		case update := <-updates:
@@ -74,8 +76,45 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 	if update.Message != nil {
 		b.log.Info("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
+		var view ViewFunc
+
+		cmd := update.Message.Command()
+
+		cmdView, ok := b.cmdView[cmd]
+		if !ok {
+			return
+		}
+
+		view = cmdView
+
+		if err := view(ctx, b.bot, update); err != nil {
+			b.log.Error("failed to handle update: %v", err)
+			if err == boterror.ErrIsNotAdmin {
+				b.delete(update.Message.Chat.ID)
+			}
+			return
+		}
 	} else if update.CallbackQuery != nil {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
+
+		var callback ViewFunc
+		err, callbackView := callbackQuery.CallbackStrings(update, b)
+		if err != nil {
+			b.log.Error("%v", err)
+			return
+		}
+
+		callback = callbackView
+
+		if err := callback(ctx, b.bot, update); err != nil {
+			b.log.Error("failed to handle update: %v", err)
+
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "internal error")
+			if _, err := b.bot.Send(msg); err != nil {
+				b.log.Error("failed to send message: %v", err)
+			}
+			return
+		}
 	}
 
 }
