@@ -1,11 +1,10 @@
-package callback
+package tgbot
 
 import (
-	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func CallbackStrings(update *tgbotapi.Update, bot *tgbot.Bot) (error, tgbot.ViewFunc) {
+func CallbackStrings(update *tgbotapi.Update, bot *Bot) (error, ViewFunc) {
 	//callbackData := update.CallbackData()
 
 	//switch {

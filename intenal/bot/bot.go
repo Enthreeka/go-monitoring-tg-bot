@@ -4,6 +4,9 @@ import (
 	"context"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/config"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/view"
+	pgRepo "github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/postgres"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -12,7 +15,30 @@ import (
 	"syscall"
 )
 
-func Run(log *logger.Logger, cfg *config.Config) error {
+type Bot struct {
+	userService         service.UserService
+	requestService      service.RequestService
+	notificationService service.NotificationService
+	channelService      service.ChannelService
+}
+
+func NewBot() *Bot {
+	return &Bot{}
+}
+
+func (b *Bot) initServices(psql *postgres.Postgres) {
+	userRepo := pgRepo.NewUserRepo(psql)
+	requestRepo := pgRepo.NewRequestRepo(psql)
+	notificationRepo := pgRepo.NewNotificationRepo(psql)
+	channelRepo := pgRepo.NewChannelRepo(psql)
+
+	b.userService = service.NewUserService(userRepo)
+	b.requestService = service.NewRequestService(requestRepo)
+	b.notificationService = service.NewNotificationService(notificationRepo)
+	b.channelService = service.NewChannelService(channelRepo)
+}
+
+func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	bot, err := tgbotapi.NewBotAPI(cfg.Telegram.Token)
 	if err != nil {
 		log.Fatal("failed to load token %v", err)
@@ -28,12 +54,15 @@ func Run(log *logger.Logger, cfg *config.Config) error {
 
 	newBot := tgbot.NewBot(bot, log)
 
+	generalView := view.NewViewGeneral(log)
+
+	newBot.RegisterCommandView("start", generalView.ViewStart())
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	if err := newBot.Run(ctx); err != nil {
 		log.Error("failed to run tgbot: %v", err)
 	}
-
 	return nil
 }

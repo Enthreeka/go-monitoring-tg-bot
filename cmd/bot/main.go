@@ -14,7 +14,9 @@ func main() {
 		log.Fatal("failed load config: %v", err)
 	}
 
-	if err := bot.Run(log, cfg); err != nil {
-		log.Fatal("failed to run tgbot: %v", err)
+	newBot := bot.NewBot()
+
+	if err := newBot.Run(log, cfg); err != nil {
+		log.Fatal("failed to run telegram bot: %v", err)
 	}
 }

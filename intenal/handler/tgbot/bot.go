@@ -2,8 +2,6 @@ package tgbot
 
 import (
 	"context"
-	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
-	callbackQuery "github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot/callback"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"runtime/debug"
@@ -89,16 +87,18 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := view(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-			if err == boterror.ErrIsNotAdmin {
-				b.delete(update.Message.Chat.ID)
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "internal error")
+			if _, err := b.bot.Send(msg); err != nil {
+				b.log.Error("failed to send message: %v", err)
 			}
 			return
 		}
+		// Если нажали кнопку
 	} else if update.CallbackQuery != nil {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
 
 		var callback ViewFunc
-		err, callbackView := callbackQuery.CallbackStrings(update, b)
+		err, callbackView := CallbackStrings(update, b)
 		if err != nil {
 			b.log.Error("%v", err)
 			return
@@ -108,7 +108,6 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := callback(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-
 			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "internal error")
 			if _, err := b.bot.Send(msg); err != nil {
 				b.log.Error("failed to send message: %v", err)
