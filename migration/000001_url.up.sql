@@ -8,35 +8,35 @@ DO $$
 DO $$
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status') THEN
-            CREATE TYPE status AS ENUM ('in progress','Approved','Rejected');
+            CREATE TYPE status AS ENUM ('in progress','approved','rejected');
         END IF;
     END $$;
 
 create table if not exists "user"(
     id           bigint unique,
-    tg_username  text,
-    created_at   timestamp,
-    phone        varchar(20),
-    channel_from varchar(150),
-    user_role         role default 'user',
+    tg_username  text not null ,
+    created_at   timestamp not null,
+    phone        varchar(20) null,
+    channel_from varchar(150) null,
+    user_role         role default 'user' not null,
     primary key (id)
 );
 
 create table if not exists channel(
     id int generated always as identity,
-    tg_id bigint,
-    channel_name varchar(150),
-    channel_url varchar(150),
+    tg_id bigint unique not null,
+    channel_name varchar(150) null,
+    channel_url varchar(150) null,
     primary key (id)
 );
 
 create table if not exists notification(
     id int generated always as identity,
     channel_id bigint,
-    notification_text text ,
-    file_id varchar(150),
-    file_type varchar(150),
-    button_url varchar(150),
+    notification_text text not null ,
+    file_id varchar(150) null,
+    file_type varchar(150) null,
+    button_url varchar(150) null,
     primary key (id),
     foreign key (channel_id)
     references channel (id) on delete cascade
@@ -45,8 +45,9 @@ create table if not exists notification(
 
 create table if not exists request(
     id int generated always as identity,
-    user_id bigint,
-    status_request status default 'in progress',
+    user_id bigint not null,
+    status_request status default 'in progress' not null,
+    date_request timestamp not null,
     foreign key (user_id)
     references "user" (id) on delete cascade
 );

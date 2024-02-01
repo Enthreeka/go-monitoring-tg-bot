@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 )
 
 type UserService interface {
@@ -12,15 +13,20 @@ type UserService interface {
 	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
 	UpdateRole(ctx context.Context, role string) error
 	GetAllID(ctx context.Context) ([]*int64, error)
+	JoinChannel(ctx context.Context, user *entity.User, req *entity.Request) error
 }
 
 type userService struct {
-	userRepo postgres.UserRepo
+	userRepo    postgres.UserRepo
+	requestRepo postgres.RequestRepo
+	log         *logger.Logger
 }
 
-func NewUserService(userRepo postgres.UserRepo) UserService {
+func NewUserService(userRepo postgres.UserRepo, requestRepo postgres.RequestRepo, log *logger.Logger) UserService {
 	return &userService{
-		userRepo: userRepo,
+		userRepo:    userRepo,
+		requestRepo: requestRepo,
+		log:         log,
 	}
 }
 
@@ -42,4 +48,28 @@ func (u *userService) UpdateRole(ctx context.Context, role string) error {
 
 func (u *userService) GetAllID(ctx context.Context) ([]*int64, error) {
 	return u.userRepo.GetAllID(ctx)
+}
+
+func (u *userService) JoinChannel(ctx context.Context, user *entity.User, req *entity.Request) error {
+	u.log.Info("Get user: %s, with request: %s", user.String(), req.String())
+
+	isExist, err := u.userRepo.IsUserExistByUsernameTg(ctx, user.UsernameTg)
+	if err != nil {
+		u.log.Error("userRepo.IsUserExistByUsernameTg: failed to check user: %v", err)
+		return err
+	}
+
+	if !isExist {
+		err := u.userRepo.CreateUser(ctx, user)
+		if err != nil {
+			u.log.Error("userRepo.CreateUser: failed to create user: %v", err)
+			return err
+		}
+	}
+
+	err = u.requestRepo.Create(ctx, req)
+	if err != nil {
+		u.log.Error("requestRepo.Create: failed to create request: %v", err)
+	}
+	return nil
 }

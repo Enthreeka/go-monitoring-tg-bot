@@ -26,13 +26,13 @@ func NewBot() *Bot {
 	return &Bot{}
 }
 
-func (b *Bot) initServices(psql *postgres.Postgres) {
+func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	userRepo := pgRepo.NewUserRepo(psql)
 	requestRepo := pgRepo.NewRequestRepo(psql)
 	notificationRepo := pgRepo.NewNotificationRepo(psql)
 	channelRepo := pgRepo.NewChannelRepo(psql)
 
-	b.userService = service.NewUserService(userRepo)
+	b.userService = service.NewUserService(userRepo, requestRepo, log)
 	b.requestService = service.NewRequestService(requestRepo)
 	b.notificationService = service.NewNotificationService(notificationRepo)
 	b.channelService = service.NewChannelService(channelRepo)
@@ -52,7 +52,9 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	}
 	defer psql.Close()
 
-	newBot := tgbot.NewBot(bot, log)
+	b.initServices(psql, log)
+
+	newBot := tgbot.NewBot(bot, log, b.requestService, b.userService)
 
 	generalView := view.NewViewGeneral(log)
 

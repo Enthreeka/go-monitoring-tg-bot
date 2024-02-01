@@ -16,6 +16,7 @@ type UserRepo interface {
 	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
 	UpdateRole(ctx context.Context, role string) error
 	GetAllID(ctx context.Context) ([]*int64, error)
+	IsUserExistByUsernameTg(ctx context.Context, usernameTg string) (bool, error)
 }
 
 type userRepo struct {
@@ -107,4 +108,12 @@ func (u *userRepo) GetAllID(ctx context.Context) ([]*int64, error) {
 	}
 
 	return allID, nil
+}
+
+func (u *userRepo) IsUserExistByUsernameTg(ctx context.Context, usernameTg string) (bool, error) {
+	query := `select exists (select id from "user" where tg_username = $1)`
+	var isExist bool
+
+	err := u.Pool.QueryRow(ctx, query, usernameTg).Scan(&isExist)
+	return isExist, err
 }

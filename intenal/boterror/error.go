@@ -16,6 +16,10 @@ var (
 	ErrNotFound            = NewError("Tasks not found", errors.New("not_found"))
 )
 
+var (
+	ErrNil = NewError("Nil pointer value", errors.New("nil_pointer"))
+)
+
 type BotError struct {
 	Msg string `json:"message"`
 	Err error  `json:"-"`
