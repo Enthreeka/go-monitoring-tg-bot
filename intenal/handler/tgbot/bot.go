@@ -2,7 +2,6 @@ package tgbot
 
 import (
 	"context"
-	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -96,6 +95,11 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 	if update.Message != nil {
 		b.log.Info("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
+		if err := b.userService.CreateUser(ctx, userUpdateToModel(update)); err != nil {
+			b.log.Error("userService.CreateUser: failed to create user: %v", err)
+			return
+		}
+
 		var view ViewFunc
 
 		cmd := update.Message.Command()
@@ -109,9 +113,8 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := view(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "internal error")
-			if _, err := b.bot.Send(msg); err != nil {
-				b.log.Error("failed to send message: %v", err)
+			if err := b.HandleError(update, internalServerError); err != nil {
+				b.log.Error("HandleError: %v", err)
 			}
 			return
 		}
@@ -130,48 +133,48 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := callback(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "internal server error")
-			if _, err := b.bot.Send(msg); err != nil {
-				b.log.Error("failed to send message: %v", err)
+			if err := b.HandleError(update, internalServerError); err != nil {
+				b.log.Error("HandleError: %v", err)
 			}
 			return
 		}
 	} else if update.ChatJoinRequest != nil {
 		b.log.Info("[%s] %s", update.ChatJoinRequest.From.UserName, update.ChatJoinRequest.InviteLink.InviteLink)
 
-		if update.ChatJoinRequest.InviteLink == nil {
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "internal server error")
-			if _, err := b.bot.Send(msg); err != nil {
-				b.log.Error("failed to send message: %v", err)
+		if err := b.userService.JoinChannel(ctx, userUpdateToModel(update), requestUpdateToModel(update)); err != nil {
+			b.log.Error("userService.JoinChannel: %v", err)
+			if err := b.HandleError(update, internalServerError); err != nil {
+				b.log.Error("HandleError: %v", err)
 			}
 			return
-		}
-
-		user := &entity.User{
-			ID:          update.ChatJoinRequest.From.ID,
-			UsernameTg:  update.ChatJoinRequest.From.UserName,
-			Phone:       nil,
-			ChannelFrom: &update.ChatJoinRequest.InviteLink.InviteLink,
-			CreatedAt:   time.Now().Local(),
-			Role:        roleUser,
-		}
-		request := &entity.Request{
-			UserID:        update.ChatJoinRequest.From.ID,
-			StatusRequest: requestInProgress,
-		}
-
-		if err := b.userService.JoinChannel(ctx, user, request); err != nil {
-			b.log.Error("userService.JoinChannel: can`t ")
 		}
 	}
 }
 
-func (b *Bot) JoinRequest(update *tgbotapi.Update) error {
-	req := update.ChatJoinRequest
+func userUpdateToModel(update *tgbotapi.Update) *entity.User {
+	user := new(entity.User)
 
-	if req == nil {
-		return boterror.ErrNil
+	if update.Message != nil {
+		user.ID = update.Message.From.ID
+		user.UsernameTg = update.Message.From.UserName
+		user.ChannelFrom = nil
+		user.CreatedAt = time.Now().Local()
+		user.Role = roleUser
 	}
 
-	return nil
+	if update.ChatJoinRequest != nil {
+		user.ID = update.ChatJoinRequest.From.ID
+		user.UsernameTg = update.ChatJoinRequest.From.UserName
+		user.ChannelFrom = &update.ChatJoinRequest.InviteLink.InviteLink
+		user.CreatedAt = time.Now().Local()
+		user.Role = roleUser
+	}
+	return user
+}
+
+func requestUpdateToModel(update *tgbotapi.Update) *entity.Request {
+	return &entity.Request{
+		UserID:        update.ChatJoinRequest.From.ID,
+		StatusRequest: requestInProgress,
+	}
 }

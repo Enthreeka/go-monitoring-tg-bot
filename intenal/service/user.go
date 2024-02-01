@@ -31,7 +31,22 @@ func NewUserService(userRepo postgres.UserRepo, requestRepo postgres.RequestRepo
 }
 
 func (u *userService) CreateUser(ctx context.Context, user *entity.User) error {
-	return u.userRepo.CreateUser(ctx, user)
+	u.log.Info("Get user: %s, with request: %s", user.String())
+
+	isExist, err := u.userRepo.IsUserExistByUsernameTg(ctx, user.UsernameTg)
+	if err != nil {
+		u.log.Error("userRepo.IsUserExistByUsernameTg: failed to check user: %v", err)
+		return err
+	}
+
+	if !isExist {
+		err := u.userRepo.CreateUser(ctx, user)
+		if err != nil {
+			u.log.Error("userRepo.CreateUser: failed to create user: %v", err)
+			return err
+		}
+	}
+	return nil
 }
 
 func (u *userService) GetAllUsers(ctx context.Context) ([]entity.User, error) {
@@ -67,6 +82,7 @@ func (u *userService) JoinChannel(ctx context.Context, user *entity.User, req *e
 		}
 	}
 
+	// create only `in progress`
 	err = u.requestRepo.Create(ctx, req)
 	if err != nil {
 		u.log.Error("requestRepo.Create: failed to create request: %v", err)
