@@ -15,6 +15,8 @@ type ChannelRepo interface {
 	GetByID(ctx context.Context, id int) (*entity.Channel, error)
 	DeleteByID(ctx context.Context, id int) error
 	GetAll(ctx context.Context) ([]entity.Channel, error)
+	UpdateStatusByTgID(ctx context.Context, status string, telegramID int64) error
+	IsChannelExistByTgID(ctx context.Context, telegramID int64) (bool, error)
 }
 
 type channelRepo struct {
@@ -29,7 +31,7 @@ func NewChannelRepo(pg *postgres.Postgres) ChannelRepo {
 
 func (u *channelRepo) collectRow(row pgx.Row) (*entity.Channel, error) {
 	var channel entity.Channel
-	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL)
+	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, boterror.ErrNoRows
 	}
@@ -51,9 +53,9 @@ func (u *channelRepo) collectRows(rows pgx.Rows) ([]entity.Channel, error) {
 }
 
 func (u *channelRepo) Create(ctx context.Context, channel *entity.Channel) error {
-	query := `insert into channel (tg_id,channel_name,channel_url) values ($1,$2,$3)`
+	query := `insert into channel (tg_id,channel_name,channel_url,channel_status) values ($1,$2,$3,$4)`
 
-	_, err := u.Pool.Exec(ctx, query, channel.TelegramID, channel.ChannelName, channel.ChannelURL)
+	_, err := u.Pool.Exec(ctx, query, channel.TelegramID, channel.ChannelName, channel.ChannelURL, channel.Status)
 	return err
 }
 
@@ -79,4 +81,19 @@ func (u *channelRepo) GetAll(ctx context.Context) ([]entity.Channel, error) {
 		return nil, err
 	}
 	return u.collectRows(rows)
+}
+
+func (u *channelRepo) UpdateStatusByTgID(ctx context.Context, status string, telegramID int64) error {
+	query := `update channel set channel_status = $1 where tg_id = $2`
+
+	_, err := u.Pool.Exec(ctx, query, status, telegramID)
+	return err
+}
+
+func (u *channelRepo) IsChannelExistByTgID(ctx context.Context, telegramID int64) (bool, error) {
+	query := `select exists (select id from channel where tg_id = $1)`
+	var isExist bool
+
+	err := u.Pool.QueryRow(ctx, query, telegramID).Scan(&isExist)
+	return isExist, err
 }

@@ -35,7 +35,7 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	b.userService = service.NewUserService(userRepo, requestRepo, log)
 	b.requestService = service.NewRequestService(requestRepo)
 	b.notificationService = service.NewNotificationService(notificationRepo)
-	b.channelService = service.NewChannelService(channelRepo)
+	b.channelService = service.NewChannelService(channelRepo, log)
 }
 
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
@@ -54,7 +54,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	b.initServices(psql, log)
 
-	newBot := tgbot.NewBot(bot, log, b.requestService, b.userService)
+	newBot := tgbot.NewBot(bot, log, b.requestService, b.userService, b.channelService)
 
 	generalView := view.NewViewGeneral(log)
 

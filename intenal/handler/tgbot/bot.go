@@ -2,8 +2,6 @@ package tgbot
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -34,6 +32,7 @@ type Bot struct {
 
 	requestService service.RequestService
 	userService    service.UserService
+	channelService service.ChannelService
 
 	mu sync.RWMutex
 }
@@ -41,12 +40,14 @@ type Bot struct {
 func NewBot(bot *tgbotapi.BotAPI,
 	log *logger.Logger,
 	requestService service.RequestService,
-	userService service.UserService) *Bot {
+	userService service.UserService,
+	channelService service.ChannelService) *Bot {
 	return &Bot{
 		bot:            bot,
 		log:            log,
 		requestService: requestService,
 		userService:    userService,
+		channelService: channelService,
 	}
 }
 
@@ -150,50 +151,16 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			}
 			return
 		}
+		// Если бота добавляют/удаляют из канала
 	} else if update.MyChatMember != nil {
 		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
 
-		s, _ := json.MarshalIndent(update.MyChatMember, " ", "")
-		b.log.Info("%s", s)
-	}
-}
-
-func channelUpdateToModel(update *tgbotapi.Update) *entity.Channel {
-	channel := &entity.Channel{
-		TelegramID:  update.MyChatMember.Chat.ID,
-		ChannelName: update.MyChatMember.Chat.Title,
-	}
-
-	if update.MyChatMember.Chat.UserName != "" {
-		channel.ChannelURL = "t.me/" + update.MyChatMember.Chat.UserName
-	}
-
-	return channel
-}
-
-func userUpdateToModel(update *tgbotapi.Update) *entity.User {
-	user := new(entity.User)
-
-	if update.Message != nil {
-		user.ID = update.Message.From.ID
-		user.UsernameTg = update.Message.From.UserName
-		user.CreatedAt = time.Now().Local()
-		user.Role = roleUser
-	}
-
-	if update.ChatJoinRequest != nil {
-		user.ID = update.ChatJoinRequest.From.ID
-		user.UsernameTg = update.ChatJoinRequest.From.UserName
-		user.ChannelFrom = &update.ChatJoinRequest.InviteLink.InviteLink
-		user.CreatedAt = time.Now().Local()
-		user.Role = roleUser
-	}
-	return user
-}
-
-func requestUpdateToModel(update *tgbotapi.Update) *entity.Request {
-	return &entity.Request{
-		UserID:        update.ChatJoinRequest.From.ID,
-		StatusRequest: requestInProgress,
+		if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
+			b.log.Error("channelService.ChatMember: %v", err)
+			if err := b.HandleError(update, internalServerError); err != nil {
+				b.log.Error("HandleError: %v", err)
+			}
+			return
+		}
 	}
 }
