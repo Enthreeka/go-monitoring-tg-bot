@@ -3,7 +3,7 @@ package entity
 import "fmt"
 
 type Channel struct {
-	ID          int64  `json:"id"`
+	ID          int    `json:"id"`
 	TelegramID  int64  `json:"tg_id"`
 	ChannelName string `json:"channel_name"`
 	ChannelURL  string `json:"channel_url"`

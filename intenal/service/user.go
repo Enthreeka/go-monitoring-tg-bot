@@ -31,8 +31,6 @@ func NewUserService(userRepo postgres.UserRepo, requestRepo postgres.RequestRepo
 }
 
 func (u *userService) CreateUser(ctx context.Context, user *entity.User) error {
-	u.log.Info("Get user: %s, with request: %s", user.String())
-
 	isExist, err := u.userRepo.IsUserExistByUsernameTg(ctx, user.UsernameTg)
 	if err != nil {
 		u.log.Error("userRepo.IsUserExistByUsernameTg: failed to check user: %v", err)
@@ -40,6 +38,8 @@ func (u *userService) CreateUser(ctx context.Context, user *entity.User) error {
 	}
 
 	if !isExist {
+		u.log.Info("Get user: %s, with request: %s", user.String())
+
 		err := u.userRepo.CreateUser(ctx, user)
 		if err != nil {
 			u.log.Error("userRepo.CreateUser: failed to create user: %v", err)

@@ -2,6 +2,7 @@ package pgx_error
 
 import (
 	"errors"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -23,4 +24,19 @@ func ErrorCode(err error) string {
 		return pgErr.Code
 	}
 	return ""
+}
+
+func ErrorHandler(err error) error {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return boterror.ErrNoRows
+	}
+	errCode := ErrorCode(err)
+	if errCode == ForeignKeyViolation {
+		return boterror.ErrForeignKeyViolation
+	}
+	if errCode == UniqueViolation {
+		return boterror.ErrUniqueViolation
+	}
+
+	return nil
 }

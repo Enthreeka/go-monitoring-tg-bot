@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -138,6 +139,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			}
 			return
 		}
+		// Если пришла заявка
 	} else if update.ChatJoinRequest != nil {
 		b.log.Info("[%s] %s", update.ChatJoinRequest.From.UserName, update.ChatJoinRequest.InviteLink.InviteLink)
 
@@ -148,7 +150,25 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			}
 			return
 		}
+	} else if update.MyChatMember != nil {
+		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
+
+		s, _ := json.MarshalIndent(update.MyChatMember, " ", "")
+		b.log.Info("%s", s)
 	}
+}
+
+func channelUpdateToModel(update *tgbotapi.Update) *entity.Channel {
+	channel := &entity.Channel{
+		TelegramID:  update.MyChatMember.Chat.ID,
+		ChannelName: update.MyChatMember.Chat.Title,
+	}
+
+	if update.MyChatMember.Chat.UserName != "" {
+		channel.ChannelURL = "t.me/" + update.MyChatMember.Chat.UserName
+	}
+
+	return channel
 }
 
 func userUpdateToModel(update *tgbotapi.Update) *entity.User {
@@ -157,7 +177,6 @@ func userUpdateToModel(update *tgbotapi.Update) *entity.User {
 	if update.Message != nil {
 		user.ID = update.Message.From.ID
 		user.UsernameTg = update.Message.From.UserName
-		user.ChannelFrom = nil
 		user.CreatedAt = time.Now().Local()
 		user.Role = roleUser
 	}

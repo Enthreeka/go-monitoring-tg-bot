@@ -2,8 +2,6 @@ package postgres
 
 import (
 	"context"
-	"errors"
-	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	pgxError "github.com/Entreeka/monitoring-tg-bot/intenal/boterror/pgx_error"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/postgres"
@@ -32,16 +30,10 @@ func NewUserRepo(pg *postgres.Postgres) UserRepo {
 func (u *userRepo) collectRow(row pgx.Row) (*entity.User, error) {
 	var user entity.User
 	err := row.Scan(&user.ID, &user.UsernameTg, &user.CreatedAt, &user.Phone, &user.ChannelFrom, &user.Role)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, boterror.ErrNoRows
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return nil, checkErr
 	}
-	errCode := pgxError.ErrorCode(err)
-	if errCode == pgxError.ForeignKeyViolation {
-		return nil, boterror.ErrForeignKeyViolation
-	}
-	if errCode == pgxError.UniqueViolation {
-		return nil, boterror.ErrUniqueViolation
-	}
+
 	return &user, err
 }
 
@@ -98,6 +90,9 @@ func (u *userRepo) GetAllID(ctx context.Context) ([]*int64, error) {
 
 		err := rows.Scan(&id)
 		if err != nil {
+			if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+				return nil, checkErr
+			}
 			return nil, err
 		}
 
@@ -115,5 +110,9 @@ func (u *userRepo) IsUserExistByUsernameTg(ctx context.Context, usernameTg strin
 	var isExist bool
 
 	err := u.Pool.QueryRow(ctx, query, usernameTg).Scan(&isExist)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return isExist, checkErr
+	}
+
 	return isExist, err
 }
