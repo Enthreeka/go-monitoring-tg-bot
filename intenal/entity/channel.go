@@ -12,6 +12,13 @@ type Channel struct {
 }
 
 func (c Channel) String() string {
-	return fmt.Sprintf("(id: %d | tg_id: %d | channel_name: %s | ChannelURL: %s | Status: %s)", c.ID,
-		c.TelegramID, c.ChannelName, *c.ChannelURL, c.Status)
+	var url string
+	if c.ChannelURL == nil {
+		url = "nil pointer"
+	} else {
+		url = *c.ChannelURL
+	}
+
+	return fmt.Sprintf("(tg_id: %d | channel_name: %s | ChannelURL: %s | Status: %s)",
+		c.TelegramID, c.ChannelName, url, c.Status)
 }

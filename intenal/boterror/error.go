@@ -41,5 +41,5 @@ func ParseErrToText(err error) string {
 
 	}
 
-	return "Произошла внутренняя ошибка на сервере"
+	return "Произошла внутрення ошибка на сервере"
 }

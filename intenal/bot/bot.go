@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/config"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/callback"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/view"
 	pgRepo "github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
@@ -16,10 +17,17 @@ import (
 )
 
 type Bot struct {
+	psql *postgres.Postgres
+
 	userService         service.UserService
 	requestService      service.RequestService
 	notificationService service.NotificationService
 	channelService      service.ChannelService
+
+	generalViewHandler view.ViewGeneral
+
+	channelCallbackHandler callback.CallbackChannel
+	generalCallbackHandler callback.CallbackGeneral
 }
 
 func NewBot() *Bot {
@@ -38,6 +46,24 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	b.channelService = service.NewChannelService(channelRepo, log)
 }
 
+func (b *Bot) initHandlers(log *logger.Logger) {
+	b.generalViewHandler = view.ViewGeneral{
+		Log: log,
+	}
+	b.channelCallbackHandler = callback.CallbackChannel{
+		ChannelService: b.channelService,
+		Log:            log,
+	}
+	b.generalCallbackHandler = callback.CallbackGeneral{
+		Log: log,
+	}
+}
+
+func (b *Bot) initialize(log *logger.Logger) {
+	b.initServices(b.psql, log)
+	b.initHandlers(log)
+}
+
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	bot, err := tgbotapi.NewBotAPI(cfg.Telegram.Token)
 	if err != nil {
@@ -51,14 +77,17 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 		log.Fatal("failed to connect PostgreSQL: %v", err)
 	}
 	defer psql.Close()
+	b.psql = psql
 
-	b.initServices(psql, log)
+	b.initialize(log)
 
 	newBot := tgbot.NewBot(bot, log, b.requestService, b.userService, b.channelService)
 
-	generalView := view.NewViewGeneral(log)
+	newBot.RegisterCommandView("start", b.generalViewHandler.ViewStart())
 
-	newBot.RegisterCommandView("start", generalView.ViewStart())
+	newBot.RegisterCommandCallback("main_menu", b.generalCallbackHandler.CallbackStart())
+	newBot.RegisterCommandCallback("channel_setting", b.channelCallbackHandler.CallbackShowAllChannel())
+	//newBot.RegisterCommandCallback("channel_get", b.channelCallbackHandler.CallbackShowAllChannel())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

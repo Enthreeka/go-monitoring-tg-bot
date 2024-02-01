@@ -1,4 +1,4 @@
-package view
+package callback
 
 import (
 	"context"
@@ -9,13 +9,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type ViewGeneral struct {
+type CallbackGeneral struct {
 	Log *logger.Logger
 }
 
-func (v *ViewGeneral) ViewStart() tgbot.ViewFunc {
+func (v *CallbackGeneral) CallbackStart() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		msg := tgbotapi.NewMessage(update.FromChat().ID, "<b>Главное меню бота</b>")
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, "<b>Главное меню бота</b>")
 		msg.ReplyMarkup = &markup.StartMenu
 		msg.ParseMode = tgbotapi.ModeHTML
 
@@ -23,7 +23,6 @@ func (v *ViewGeneral) ViewStart() tgbot.ViewFunc {
 			v.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
-
 		return nil
 	}
 }

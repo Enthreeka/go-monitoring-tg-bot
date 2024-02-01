@@ -1,17 +1,39 @@
 package tgbot
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"errors"
+	"strings"
 )
 
-func CallbackStrings(update *tgbotapi.Update, bot *Bot) (error, ViewFunc) {
-	//callbackData := update.CallbackData()
+var (
+	ErrNotFound = errors.New("not found in map")
+)
 
-	//switch {
-	//case strings.HasPrefix():
-	//
-	//default:
-	//	return nil, nil
-	//}
-	return nil, nil
+func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
+	switch {
+
+	case strings.HasPrefix(callbackData, "channel_get_"):
+		callbackView, ok := b.callbackView["channel_get"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "channel_setting"):
+		callbackView, ok := b.callbackView["channel_setting"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "main_menu"):
+		callbackView, ok := b.callbackView["main_menu"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	default:
+		return nil, nil
+	}
 }

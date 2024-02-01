@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/button"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type ChannelService interface {
@@ -13,6 +16,7 @@ type ChannelService interface {
 	DeleteByID(ctx context.Context, id int) error
 	GetAll(ctx context.Context) ([]entity.Channel, error)
 	ChatMember(ctx context.Context, channel *entity.Channel) error
+	GetAllAdminChannel(ctx context.Context) (*tgbotapi.InlineKeyboardMarkup, error)
 }
 
 type channelService struct {
@@ -73,4 +77,37 @@ func (c *channelService) ChatMember(ctx context.Context, channel *entity.Channel
 		return err
 	}
 	return nil
+}
+
+func (c *channelService) GetAllAdminChannel(ctx context.Context) (*tgbotapi.InlineKeyboardMarkup, error) {
+	channel, err := c.channelRepo.GetAllAdminChannel(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.createChannelMarkup(channel, "get")
+}
+
+func (c *channelService) createChannelMarkup(channel []entity.Channel, command string) (*tgbotapi.InlineKeyboardMarkup, error) {
+	var rows [][]tgbotapi.InlineKeyboardButton
+	var row []tgbotapi.InlineKeyboardButton
+
+	buttonsPerRow := 1
+
+	for i, el := range channel {
+		btn := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s", el.ChannelName),
+			fmt.Sprintf("channel_%s_%d", command, el.ID))
+
+		row = append(row, btn)
+
+		if (i+1)%buttonsPerRow == 0 || i == len(channel)-1 {
+			rows = append(rows, row)
+			row = []tgbotapi.InlineKeyboardButton{}
+		}
+	}
+
+	rows = append(rows, []tgbotapi.InlineKeyboardButton{button.MainMenuButton})
+	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+	return &markup, nil
 }

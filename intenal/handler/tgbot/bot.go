@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"context"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -115,9 +116,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := view(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-			if err := b.HandleError(update, internalServerError); err != nil {
-				b.log.Error("HandleError: %v", err)
-			}
+			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
 		// Если нажали кнопку
@@ -125,7 +124,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
 
 		var callback ViewFunc
-		err, callbackView := CallbackStrings(update, b)
+		err, callbackView := b.CallbackStrings(update.CallbackData())
 		if err != nil {
 			b.log.Error("%v", err)
 			return
@@ -135,31 +134,25 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := callback(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-			if err := b.HandleError(update, internalServerError); err != nil {
-				b.log.Error("HandleError: %v", err)
-			}
+			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
-		// Если пришла заявка
+		// Если пришла заявка на вступление
 	} else if update.ChatJoinRequest != nil {
 		b.log.Info("[%s] %s", update.ChatJoinRequest.From.UserName, update.ChatJoinRequest.InviteLink.InviteLink)
 
 		if err := b.userService.JoinChannel(ctx, userUpdateToModel(update), requestUpdateToModel(update)); err != nil {
 			b.log.Error("userService.JoinChannel: %v", err)
-			if err := b.HandleError(update, internalServerError); err != nil {
-				b.log.Error("HandleError: %v", err)
-			}
+			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
-		// Если бота добавляют/удаляют из канала
+		// Если добавляют/удаляют канал
 	} else if update.MyChatMember != nil {
 		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
 
 		if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
 			b.log.Error("channelService.ChatMember: %v", err)
-			if err := b.HandleError(update, internalServerError); err != nil {
-				b.log.Error("HandleError: %v", err)
-			}
+			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
 	}
