@@ -13,6 +13,7 @@ type RequestService interface {
 	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
 	DeleteByStatus(ctx context.Context, status string) error
 	DeleteByID(ctx context.Context, id int) error
+	GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error)
 }
 
 type requestService struct {
@@ -47,4 +48,8 @@ func (r *requestService) DeleteByStatus(ctx context.Context, status string) erro
 
 func (r *requestService) DeleteByID(ctx context.Context, id int) error {
 	return r.requestRepo.DeleteByID(ctx, id)
+}
+
+func (r *requestService) GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error) {
+	return r.requestRepo.GetCountByStatusRequestAndChannelTgID(ctx, status, channelTgID)
 }

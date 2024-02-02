@@ -11,7 +11,7 @@ type User struct {
 	Phone       *string   `json:"phone"`
 	ChannelFrom *string   `json:"channel_from"`
 	CreatedAt   time.Time `json:"created_at"`
-	Role        string    `json:"user_role"`
+	Role        string    `jsаon:"user_role"`
 }
 
 func (u User) String() string {

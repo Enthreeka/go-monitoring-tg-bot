@@ -13,11 +13,12 @@ var (
 	ErrUniqueViolation     = NewError("Violation must be unique", errors.New("non_unique_value"))
 	ErrForeignKeyViolation = NewError("Foreign Key Violation", errors.New("foreign_key_violation "))
 	ErrNoRows              = NewError("No rows in result set", errors.New("no_rows"))
-	ErrNotFound            = NewError("Tasks not found", errors.New("not_found"))
+	ErrNotFound            = NewError("Not found", errors.New("not_found"))
 )
 
 var (
-	ErrNil = NewError("Nil pointer value", errors.New("nil_pointer"))
+	ErrNil        = NewError("Nil pointer value", errors.New("nil_pointer"))
+	ErrNotFoundID = NewError("ID in callback not found", errors.New("empty_id"))
 )
 
 type BotError struct {

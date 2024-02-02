@@ -1,6 +1,10 @@
 package entity
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 type Channel struct {
 	ID          int     `json:"id"`
@@ -8,7 +12,8 @@ type Channel struct {
 	ChannelName string  `json:"channel_name"`
 	ChannelURL  *string `json:"channel_url"`
 
-	Status string `json:"status"`
+	Status       string `json:"status"`
+	WaitingCount int    `json:"waiting_count,omitempty"`
 }
 
 func (c Channel) String() string {
@@ -21,4 +26,18 @@ func (c Channel) String() string {
 
 	return fmt.Sprintf("(tg_id: %d | channel_name: %s | ChannelURL: %s | Status: %s)",
 		c.TelegramID, c.ChannelName, url, c.Status)
+}
+
+func GetID(data string) int {
+	parts := strings.Split(data, "_")
+	if len(parts) > 3 {
+		return 0
+	}
+
+	id, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return 0
+	}
+
+	return id
 }

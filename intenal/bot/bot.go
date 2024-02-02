@@ -52,6 +52,7 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 	}
 	b.channelCallbackHandler = callback.CallbackChannel{
 		ChannelService: b.channelService,
+		RequestService: b.requestService,
 		Log:            log,
 	}
 	b.generalCallbackHandler = callback.CallbackGeneral{
@@ -87,7 +88,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	newBot.RegisterCommandCallback("main_menu", b.generalCallbackHandler.CallbackStart())
 	newBot.RegisterCommandCallback("channel_setting", b.channelCallbackHandler.CallbackShowAllChannel())
-	//newBot.RegisterCommandCallback("channel_get", b.channelCallbackHandler.CallbackShowAllChannel())
+	newBot.RegisterCommandCallback("channel_get", b.channelCallbackHandler.CallbackShowChannelInfo())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

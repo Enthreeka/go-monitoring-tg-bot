@@ -43,7 +43,9 @@ func userUpdateToModel(update *tgbotapi.Update) *entity.User {
 
 func requestUpdateToModel(update *tgbotapi.Update) *entity.Request {
 	return &entity.Request{
-		UserID:        update.ChatJoinRequest.From.ID,
-		StatusRequest: requestInProgress,
+		UserID:            update.ChatJoinRequest.From.ID,
+		ChannelTelegramID: update.ChatJoinRequest.Chat.ID,
+		StatusRequest:     RequestInProgress,
+		DateRequest:       time.Now().Local(),
 	}
 }

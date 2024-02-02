@@ -14,9 +14,9 @@ import (
 type ViewFunc func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error
 
 const (
-	requestInProgress = "in progress"
-	requestApproved   = "approved"
-	requestRejected   = "rejected"
+	RequestInProgress = "in progress"
+	RequestApproved   = "approved"
+	RequestRejected   = "rejected"
 )
 
 const (
