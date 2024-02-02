@@ -33,6 +33,20 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
+	case strings.HasPrefix(callbackData, "user_setting"):
+		callbackView, ok := b.callbackView["user_setting"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "download_excel"):
+		callbackView, ok := b.callbackView["download_excel"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
 	default:
 		return nil, nil
 	}

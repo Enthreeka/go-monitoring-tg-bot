@@ -11,3 +11,8 @@ func messageGetChannelInfo(channel string, waitingCount int) string {
 		"Канал: <i>%s</i> \n"+
 		"Количество людей, которые ожидают принятия: %d", channel, waitingCount)
 }
+
+const (
+	generalMainBotMenu     = `<b>Главное меню бота</b>`
+	generalUserSettingMenu = "<b>Взаимодествие с данными пользователей</b>"
+)

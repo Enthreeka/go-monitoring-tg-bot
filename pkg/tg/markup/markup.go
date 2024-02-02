@@ -30,4 +30,10 @@ var (
 			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "channel_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
+
+	UserSettingMenu = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Скачать Excel файл с пользователя", "download_excel")),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
 )

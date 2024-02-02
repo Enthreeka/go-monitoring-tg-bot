@@ -8,6 +8,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/view"
 	pgRepo "github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/excel"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/postgres"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -17,7 +18,8 @@ import (
 )
 
 type Bot struct {
-	psql *postgres.Postgres
+	psql  *postgres.Postgres
+	excel *excel.Excel
 
 	userService         service.UserService
 	requestService      service.RequestService
@@ -28,6 +30,7 @@ type Bot struct {
 
 	channelCallbackHandler callback.CallbackChannel
 	generalCallbackHandler callback.CallbackGeneral
+	userCallbackHandler    callback.CallbackUser
 }
 
 func NewBot() *Bot {
@@ -58,9 +61,19 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 	b.generalCallbackHandler = callback.CallbackGeneral{
 		Log: log,
 	}
+	b.userCallbackHandler = callback.CallbackUser{
+		Log:         log,
+		UserService: b.userService,
+		Excel:       b.excel,
+	}
+}
+
+func (b *Bot) initExcel(log *logger.Logger) {
+	b.excel = excel.NewExcel(log)
 }
 
 func (b *Bot) initialize(log *logger.Logger) {
+	b.initExcel(log)
 	b.initServices(b.psql, log)
 	b.initHandlers(log)
 }
@@ -89,6 +102,8 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("main_menu", b.generalCallbackHandler.CallbackStart())
 	newBot.RegisterCommandCallback("channel_setting", b.channelCallbackHandler.CallbackShowAllChannel())
 	newBot.RegisterCommandCallback("channel_get", b.channelCallbackHandler.CallbackShowChannelInfo())
+	newBot.RegisterCommandCallback("user_setting", b.generalCallbackHandler.CallbackGetUserSettingMenu())
+	newBot.RegisterCommandCallback("download_excel", b.userCallbackHandler.CallbackGetExcelFile())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

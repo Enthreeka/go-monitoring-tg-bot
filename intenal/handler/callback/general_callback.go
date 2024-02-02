@@ -15,8 +15,22 @@ type CallbackGeneral struct {
 
 func (v *CallbackGeneral) CallbackStart() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, "<b>Главное меню бота</b>")
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, generalMainBotMenu)
 		msg.ReplyMarkup = &markup.StartMenu
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			v.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}
+
+func (v *CallbackGeneral) CallbackGetUserSettingMenu() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, generalUserSettingMenu)
+		msg.ReplyMarkup = &markup.UserSettingMenu
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		if _, err := bot.Send(msg); err != nil {
