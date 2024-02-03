@@ -13,11 +13,13 @@ import (
 type RequestRepo interface {
 	Create(ctx context.Context, request *entity.Request) error
 	GetAll(ctx context.Context) ([]entity.Request, error)
-	GetAllByStatusRequest(ctx context.Context, status string) ([]entity.Request, error)
-	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
+	GetAllByStatusRequestAndChannelName(ctx context.Context, status string, channelName string) ([]entity.Request, error)
+	UpdateStatusRequestByUserID(ctx context.Context, request *entity.Request) error
 	DeleteByStatus(ctx context.Context, status string) error
 	DeleteByID(ctx context.Context, id int) error
 	GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error)
+	IsExistByUserID(ctx context.Context, userID int64) (bool, error)
+	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
 }
 
 type requestRepo struct {
@@ -32,7 +34,7 @@ func NewRequestRepo(pg *postgres.Postgres) RequestRepo {
 
 func (r *requestRepo) collectRow(row pgx.Row) (*entity.Request, error) {
 	var req entity.Request
-	err := row.Scan(&req.ID, &req.UserID, req.ChannelTelegramID, &req.StatusRequest, &req.DateRequest)
+	err := row.Scan(&req.ID, &req.ChannelTelegramID, &req.UserID, &req.StatusRequest, &req.DateRequest)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, boterror.ErrNoRows
 	}
@@ -70,22 +72,23 @@ func (r *requestRepo) GetAll(ctx context.Context) ([]entity.Request, error) {
 	return r.collectRows(rows)
 }
 
-func (r *requestRepo) GetAllByStatusRequest(ctx context.Context, status string) ([]entity.Request, error) {
-	query := `select id, channel_tg_id, user_id, status_request, date_request
+func (r *requestRepo) GetAllByStatusRequestAndChannelName(ctx context.Context, status string, channelName string) ([]entity.Request, error) {
+	query := `select request.id, request.channel_tg_id, request.user_id, request.status_request, request.date_request
 		from request
-		where status_request = $1`
+		join channel on request.channel_tg_id = channel.tg_id
+		where request.status_request = $1 and channel.channel_name = $2`
 
-	rows, err := r.Pool.Query(ctx, query, status)
+	rows, err := r.Pool.Query(ctx, query, status, channelName)
 	if err != nil {
 		return nil, err
 	}
 	return r.collectRows(rows)
 }
 
-func (r *requestRepo) UpdateStatusRequestByID(ctx context.Context, status string, id int) error {
-	query := `update request set status_request = $1 where id = $2`
+func (r *requestRepo) UpdateStatusRequestByUserID(ctx context.Context, request *entity.Request) error {
+	query := `update request set status_request = $1, date_request = $2 where user_id = $3`
 
-	_, err := r.Pool.Exec(ctx, query, status, id)
+	_, err := r.Pool.Exec(ctx, query, request.StatusRequest, request.DateRequest, request.UserID)
 	return err
 }
 
@@ -109,4 +112,19 @@ func (r *requestRepo) GetCountByStatusRequestAndChannelTgID(ctx context.Context,
 
 	err := r.Pool.QueryRow(ctx, query, status, channelTgID).Scan(&waitingCount)
 	return waitingCount, err
+}
+
+func (r *requestRepo) IsExistByUserID(ctx context.Context, userID int64) (bool, error) {
+	query := `select exists (select id from request where user_id = $1)`
+	var isExist bool
+
+	err := r.Pool.QueryRow(ctx, query, userID).Scan(&isExist)
+	return isExist, err
+}
+
+func (r *requestRepo) UpdateStatusRequestByID(ctx context.Context, status string, id int) error {
+	query := `update request set status_request = $1 where id = $2`
+
+	_, err := r.Pool.Exec(ctx, query, status, id)
+	return err
 }

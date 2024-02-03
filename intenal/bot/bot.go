@@ -31,6 +31,7 @@ type Bot struct {
 	channelCallbackHandler callback.CallbackChannel
 	generalCallbackHandler callback.CallbackGeneral
 	userCallbackHandler    callback.CallbackUser
+	requestCallbackHandler callback.CallbackRequest
 }
 
 func NewBot() *Bot {
@@ -44,7 +45,7 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	channelRepo := pgRepo.NewChannelRepo(psql)
 
 	b.userService = service.NewUserService(userRepo, requestRepo, log)
-	b.requestService = service.NewRequestService(requestRepo)
+	b.requestService = service.NewRequestService(requestRepo, log)
 	b.notificationService = service.NewNotificationService(notificationRepo)
 	b.channelService = service.NewChannelService(channelRepo, log)
 }
@@ -66,6 +67,10 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		UserService: b.userService,
 		Excel:       b.excel,
 	}
+	b.requestCallbackHandler = callback.CallbackRequest{
+		RequestService: b.requestService,
+		Log:            log,
+	}
 }
 
 func (b *Bot) initExcel(log *logger.Logger) {
@@ -80,6 +85,7 @@ func (b *Bot) initialize(log *logger.Logger) {
 
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	bot, err := tgbotapi.NewBotAPI(cfg.Telegram.Token)
+	bot.Debug = false
 	if err != nil {
 		log.Fatal("failed to load token %v", err)
 	}
@@ -104,6 +110,8 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("channel_get", b.channelCallbackHandler.CallbackShowChannelInfo())
 	newBot.RegisterCommandCallback("user_setting", b.generalCallbackHandler.CallbackGetUserSettingMenu())
 	newBot.RegisterCommandCallback("download_excel", b.userCallbackHandler.CallbackGetExcelFile())
+	newBot.RegisterCommandCallback("approved_all", b.requestCallbackHandler.CallbackApproveAllRequest())
+	newBot.RegisterCommandCallback("rejected_all", b.requestCallbackHandler.CallbackRejectAllRequest())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

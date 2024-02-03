@@ -124,6 +124,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
 
 		var callback ViewFunc
+
 		err, callbackView := b.CallbackStrings(update.CallbackData())
 		if err != nil {
 			b.log.Error("%v", err)
@@ -141,11 +142,18 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 	} else if update.ChatJoinRequest != nil {
 		b.log.Info("[%s] %s", update.ChatJoinRequest.From.UserName, update.ChatJoinRequest.InviteLink.InviteLink)
 
-		if err := b.userService.JoinChannel(ctx, userUpdateToModel(update), requestUpdateToModel(update)); err != nil {
-			b.log.Error("userService.JoinChannel: %v", err)
+		if err := b.userService.CreateUser(ctx, userUpdateToModel(update)); err != nil {
+			b.log.Error("userService.CreateUser: %v", err)
 			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
+
+		if err := b.requestService.CreateRequest(ctx, requestUpdateToModel(update)); err != nil {
+			b.log.Error("requestService.CreateRequest: %v", err)
+			handler.HandleError(b.bot, update, handler.InternalServerError)
+			return
+		}
+
 		// Если добавляют/удаляют канал
 	} else if update.MyChatMember != nil {
 		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)

@@ -4,42 +4,65 @@ import (
 	"context"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 )
 
 type RequestService interface {
-	Create(ctx context.Context, request *entity.Request) error
+	CreateRequest(ctx context.Context, request *entity.Request) error
 	GetAll(ctx context.Context) ([]entity.Request, error)
-	GetAllByStatusRequest(ctx context.Context, status string) ([]entity.Request, error)
-	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
+	GetAllByStatusRequest(ctx context.Context, status string, channelName string) ([]entity.Request, error)
 	DeleteByStatus(ctx context.Context, status string) error
 	DeleteByID(ctx context.Context, id int) error
 	GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error)
+	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
 }
 
 type requestService struct {
 	requestRepo postgres.RequestRepo
+	log         *logger.Logger
 }
 
-func NewRequestService(requestRepo postgres.RequestRepo) RequestService {
+func NewRequestService(requestRepo postgres.RequestRepo, log *logger.Logger) RequestService {
 	return &requestService{
 		requestRepo: requestRepo,
+		log:         log,
 	}
 }
 
-func (r *requestService) Create(ctx context.Context, request *entity.Request) error {
-	return r.requestRepo.Create(ctx, request)
+func (r *requestService) CreateRequest(ctx context.Context, request *entity.Request) error {
+	r.log.Info("Get request: %s", request.String())
+
+	isExist, err := r.requestRepo.IsExistByUserID(ctx, request.UserID)
+	if err != nil {
+		r.log.Error("requestRepo.IsExistByUserID: failed to check user in requests: %v", err)
+		return err
+	}
+
+	if isExist {
+		err := r.requestRepo.UpdateStatusRequestByUserID(ctx, request)
+		if err != nil {
+			r.log.Error("requestRepo.UpdateStatusRequestByID: failed to update request")
+			return err
+		}
+		return nil
+	}
+
+	// create only `in progress`
+	err = r.requestRepo.Create(ctx, request)
+	if err != nil {
+		r.log.Error("requestRepo.Create: failed to create request")
+		return err
+	}
+
+	return nil
 }
 
 func (r *requestService) GetAll(ctx context.Context) ([]entity.Request, error) {
 	return r.requestRepo.GetAll(ctx)
 }
 
-func (r *requestService) GetAllByStatusRequest(ctx context.Context, status string) ([]entity.Request, error) {
-	return r.requestRepo.GetAllByStatusRequest(ctx, status)
-}
-
-func (r *requestService) UpdateStatusRequestByID(ctx context.Context, status string, id int) error {
-	return r.requestRepo.UpdateStatusRequestByID(ctx, status, id)
+func (r *requestService) GetAllByStatusRequest(ctx context.Context, status string, channelName string) ([]entity.Request, error) {
+	return r.requestRepo.GetAllByStatusRequestAndChannelName(ctx, status, channelName)
 }
 
 func (r *requestService) DeleteByStatus(ctx context.Context, status string) error {
@@ -52,4 +75,8 @@ func (r *requestService) DeleteByID(ctx context.Context, id int) error {
 
 func (r *requestService) GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error) {
 	return r.requestRepo.GetCountByStatusRequestAndChannelTgID(ctx, status, channelTgID)
+}
+
+func (r *requestService) UpdateStatusRequestByID(ctx context.Context, status string, id int) error {
+	return r.requestRepo.UpdateStatusRequestByID(ctx, status, id)
 }

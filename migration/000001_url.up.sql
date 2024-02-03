@@ -62,3 +62,4 @@ create table if not exists request(
     foreign key (channel_tg_id)
         references channel (tg_id) on delete cascade
 );
+

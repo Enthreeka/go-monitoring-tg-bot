@@ -9,8 +9,6 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/excel"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
-	"os"
 )
 
 type CallbackUser struct {
@@ -28,36 +26,37 @@ func (c *CallbackUser) CallbackGetExcelFile() tgbot.ViewFunc {
 			return nil
 		}
 
-		fileName, err := c.Excel.GenerateExcelFile(users)
+		fileName, err := c.Excel.GenerateExcelFile(users, update.CallbackQuery.From.UserName)
 		if err != nil {
 			c.Log.Error("Excel.GenerateExcelFile: failed to generate excel file: %v", err)
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))
 			return nil
 		}
 
-		file, err := os.Open(fileName)
+		fileIDBytes, err := c.Excel.GetExcelFile(fileName)
 		if err != nil {
-		}
-		defer file.Close()
-
-		fileInfo, err := file.Stat()
-		if err != nil {
-
+			c.Log.Error("Excel.GetExcelFile: failed to get excel file: %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
 		}
 
-		fileSize := fileInfo.Size()
-		fileID := tgbotapi.FileBytes{Name: "file.txt", Bytes: make([]byte, fileSize)}
-		if _, err = file.Read(fileID.Bytes); err != nil {
-
+		if fileIDBytes == nil {
+			c.Log.Error("fileIDBytes: %v", boterror.ErrNil)
+			handler.HandleError(bot, update, boterror.ParseErrToText(boterror.ErrNil))
+			return nil
 		}
 
-		msg := tgbotapi.NewDocument(update.FromChat().ID, tgbotapi.FileBytes{Name: fileName, Bytes: fileID.Bytes})
-		// Отправка сообщения
-		_, err = bot.Send(msg)
-		if err != nil {
-			log.Panic(err)
-		}
+		msg := tgbotapi.NewDocument(update.FromChat().ID, tgbotapi.FileBytes{
+			Name:  fileName,
+			Bytes: *fileIDBytes,
+		})
+		msg.ParseMode = tgbotapi.ModeHTML
+		msg.Caption = userExcelFileText()
 
+		if _, err = bot.Send(msg); err != nil {
+			c.Log.Error("failed to send msg: %v", err)
+			return err
+		}
 		return nil
 	}
 }

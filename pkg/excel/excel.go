@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"os"
 	"sync"
 	"time"
 
@@ -21,7 +23,7 @@ func NewExcel(log *logger.Logger) *Excel {
 	return &Excel{log: log}
 }
 
-func (e *Excel) GenerateExcelFile(users []entity.User) (string, error) {
+func (e *Excel) GenerateExcelFile(users []entity.User, username string) (string, error) {
 	start := time.Now()
 
 	e.mu.Lock()
@@ -77,6 +79,34 @@ func (e *Excel) GenerateExcelFile(users []entity.User) (string, error) {
 	}
 
 	end := time.Since(start)
-	e.log.Info("[%s] Время генерации файла: %f", filename, end.Seconds())
+	e.log.Info("[%s] by [%s] Время генерации файла: %f", filename, username, end.Seconds())
 	return filename, nil
+}
+
+func (e *Excel) GetExcelFile(fileName string) (*[]byte, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		e.log.Error("os.Open: failed to open file: %v", err)
+		return nil, err
+	}
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		e.log.Error("file.Stat: failed to get file stat: %v", err)
+		return nil, err
+	}
+
+	fileSize := fileInfo.Size()
+	fileID := tgbotapi.FileBytes{
+		Name:  fileName,
+		Bytes: make([]byte, fileSize),
+	}
+
+	if _, err = file.Read(fileID.Bytes); err != nil {
+		e.log.Error("file.Read: failed to get read file: %v", err)
+		return nil, err
+	}
+
+	return &fileID.Bytes, nil
 }
