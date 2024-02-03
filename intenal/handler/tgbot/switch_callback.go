@@ -61,6 +61,20 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
+	case strings.HasPrefix(callbackData, "approved_time"):
+		callbackView, ok := b.callbackView["approved_time"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "hello_setting"):
+		callbackView, ok := b.callbackView["hello_setting"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
 	default:
 		return nil, nil
 	}

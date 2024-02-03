@@ -28,3 +28,7 @@ const (
 	requestApproved = `Все заявки статуса "in progress" были приняты`
 	requestDecline  = `Все заявки статуса "in progress" были отклонены`
 )
+
+func requestApproveThroughTime(seconds int) string {
+	return fmt.Sprintf("Все заявки статуса \"in progress\" были приняты через заданный промежуток времени: :d")
+}

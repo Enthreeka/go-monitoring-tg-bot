@@ -28,10 +28,11 @@ type Bot struct {
 
 	generalViewHandler view.ViewGeneral
 
-	channelCallbackHandler callback.CallbackChannel
-	generalCallbackHandler callback.CallbackGeneral
-	userCallbackHandler    callback.CallbackUser
-	requestCallbackHandler callback.CallbackRequest
+	channelCallbackHandler      callback.CallbackChannel
+	generalCallbackHandler      callback.CallbackGeneral
+	userCallbackHandler         callback.CallbackUser
+	requestCallbackHandler      callback.CallbackRequest
+	notificationCallbackHandler callback.CallbackNotification
 }
 
 func NewBot() *Bot {
@@ -70,6 +71,10 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 	b.requestCallbackHandler = callback.CallbackRequest{
 		RequestService: b.requestService,
 		Log:            log,
+	}
+	b.notificationCallbackHandler = callback.CallbackNotification{
+		NotificationService: b.notificationService,
+		Log:                 log,
 	}
 }
 
@@ -112,6 +117,8 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("download_excel", b.userCallbackHandler.CallbackGetExcelFile())
 	newBot.RegisterCommandCallback("approved_all", b.requestCallbackHandler.CallbackApproveAllRequest())
 	newBot.RegisterCommandCallback("rejected_all", b.requestCallbackHandler.CallbackRejectAllRequest())
+	newBot.RegisterCommandCallback("approved_time", b.requestCallbackHandler.CallbackApproveAllThroughTime())
+	newBot.RegisterCommandCallback("hello_setting", b.notificationCallbackHandler.CallbackGetSettingNotification())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

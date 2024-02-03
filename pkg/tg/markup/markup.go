@@ -25,7 +25,7 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отклонить всех", "rejected_all")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Настройка приветственного сообщения", "hello_message")),
+			tgbotapi.NewInlineKeyboardButtonData("Настройка приветственного сообщения", "hello_setting")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Принять через: 600с", "approved_time")),
 		tgbotapi.NewInlineKeyboardRow(
@@ -37,5 +37,14 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Скачать Excel файл с пользователя", "download_excel")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	HelloMessageSetting = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить сообщение", "text_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить фотографию", "photo_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить кнопку", "button_notification")),
 	)
 )
