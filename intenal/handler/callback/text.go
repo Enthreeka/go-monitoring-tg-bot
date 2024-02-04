@@ -27,6 +27,7 @@ func userExcelFileText() string {
 const (
 	requestApproved = `Все заявки статуса "in progress" были приняты`
 	requestDecline  = `Все заявки статуса "in progress" были отклонены`
+	requestEmpty    = `Запросы отсутствуют`
 )
 
 func requestApproveThroughTime(seconds int) string {

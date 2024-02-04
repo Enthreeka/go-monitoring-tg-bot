@@ -25,6 +25,13 @@ func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
 
 		request, err := c.RequestService.GetAllByStatusRequest(ctx, tgbot.RequestInProgress, channelName)
 		if err != nil {
+			if errors.Is(err, boterror.ErrNoRows) {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestEmpty)); err != nil {
+					c.Log.Error("failed to send message", zap.Error(err))
+					return err
+				}
+				return nil
+			}
 			c.Log.Error("requestService.GetAllByStatusRequest: failed to get all in progress request: %v", err)
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))
 			return nil
@@ -152,6 +159,13 @@ func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 
 		request, err := c.RequestService.GetAllByStatusRequest(ctx, tgbot.RequestInProgress, channelName)
 		if err != nil {
+			if errors.Is(err, boterror.ErrNoRows) {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestEmpty)); err != nil {
+					c.Log.Error("failed to send message", zap.Error(err))
+					return err
+				}
+				return nil
+			}
 			c.Log.Error("requestService.GetAllByStatusRequest: failed to get all in progress request: %v", err)
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))
 			return nil
@@ -197,6 +211,13 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 
 			request, err := c.RequestService.GetAllByStatusRequest(context.Background(), tgbot.RequestInProgress, channelName)
 			if err != nil {
+				if errors.Is(err, boterror.ErrNoRows) {
+					if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestEmpty)); err != nil {
+						c.Log.Error("failed to send message", zap.Error(err))
+						return
+					}
+					return
+				}
 				c.Log.Error("requestService.GetAllByStatusRequest: failed to get all in progress request: %v", err)
 				handler.HandleError(bot, update, boterror.ParseErrToText(err))
 				return
