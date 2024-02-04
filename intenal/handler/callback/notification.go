@@ -111,3 +111,53 @@ func (c *CallbackNotification) CallbackUpdateButtonNotification() tgbot.ViewFunc
 		return nil
 	}
 }
+
+func (c *CallbackNotification) CallbackGetExampleNotification() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		notification, err := c.NotificationService.GetByChannelName(ctx, channelName)
+		if err != nil {
+			c.Log.Error("NotificationService.GetByChannelName: failed to get channel: %v", err)
+			return err
+		}
+
+		msg := tgbotapi.NewMessage(update.FromChat().ID, *notification.NotificationText)
+		if notification.FileID != nil {
+			//fileID := tgbotapi.FileID(*notification.FileID)
+			//msg := tgbotapi.DocumentConfig{
+			//	ParseMode: tgbotapi.ModeHTML,
+			//	BaseFile: tgbotapi.BaseFile{
+			//		BaseChat: tgbotapi.BaseChat{
+			//			ChatID:      update.CallbackQuery.Message.Chat.ID,
+			//			ReplyMarkup: tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tg.MainMenuButton)),
+			//		},
+			//		File: fileID,
+			//	},
+			//}
+		}
+
+		if notification.ButtonURL != nil {
+			msg.ReplyMarkup = notification.ButtonURL
+		}
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}
+
+func (c *CallbackNotification) CallbackCancelNotificationSetting() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		userID := update.FromChat().ID
+		c.Store.Delete(userID)
+
+		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID, notificationCancel)
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}

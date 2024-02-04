@@ -20,8 +20,8 @@ var (
 
 	InfoRequest = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Принять всех", "approved_all"),
-			tgbotapi.NewInlineKeyboardButtonData("Принять часть", "approved_part")),
+			tgbotapi.NewInlineKeyboardButtonData("Принять всех", "approved_all")),
+		//tgbotapi.NewInlineKeyboardButtonData("Принять часть", "approved_part")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отклонить всех", "rejected_all")),
 		tgbotapi.NewInlineKeyboardRow(

@@ -130,7 +130,8 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("text_notification", b.notificationCallbackHandler.CallbackUpdateTextNotification())
 	newBot.RegisterCommandCallback("photo_notification", b.notificationCallbackHandler.CallbackUpdateFileNotification())
 	newBot.RegisterCommandCallback("button_notification", b.notificationCallbackHandler.CallbackUpdateButtonNotification())
-	newBot.RegisterCommandCallback("example_notification", b.notificationCallbackHandler.CallbackGetExmapleNotification())
+	newBot.RegisterCommandCallback("example_notification", b.notificationCallbackHandler.CallbackGetExampleNotification())
+	newBot.RegisterCommandCallback("cancel_setting", b.notificationCallbackHandler.CallbackCancelNotificationSetting())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

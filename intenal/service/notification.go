@@ -11,7 +11,7 @@ type NotificationService interface {
 	createNotificationIfNotExist(ctx context.Context, notification *entity.Notification) (int64, error)
 	Delete(ctx context.Context, id int) error
 	GetAll(ctx context.Context) ([]entity.Notification, error)
-	GetByChannelID(ctx context.Context, channelID int64) (*entity.Notification, error)
+	GetByChannelName(ctx context.Context, channelName string) (*entity.Notification, error)
 	UpdateTextNotification(ctx context.Context, notification *entity.Notification) error
 	UpdateFileNotification(ctx context.Context, notification *entity.Notification) error
 	UpdateButtonNotification(ctx context.Context, notification *entity.Notification) error
@@ -66,19 +66,25 @@ func (n *notificationService) GetAll(ctx context.Context) ([]entity.Notification
 	return n.notificationRepo.GetAll(ctx)
 }
 
-func (n *notificationService) GetByChannelID(ctx context.Context, channelID int64) (*entity.Notification, error) {
+func (n *notificationService) GetByChannelName(ctx context.Context, channelName string) (*entity.Notification, error) {
+	channelID, err := n.channelRepo.GetChannelIDByChannelName(ctx, channelName)
+	if err != nil {
+		n.log.Error("channelRepo.GetChannelIDByChannelName: failed to get channel id: %v", err)
+		return nil, err
+	}
+
 	return n.notificationRepo.GetByChannelID(ctx, channelID)
 }
 
 func (n *notificationService) UpdateTextNotification(ctx context.Context, notification *entity.Notification) error {
 	channelID, err := n.createNotificationIfNotExist(ctx, notification)
-	if channelID == 0 || err == nil {
-		return nil
-	}
-
 	if err != nil {
 		n.log.Error("createNotificationIfNotExist: %v", err)
 		return err
+	}
+
+	if channelID == 0 && err == nil {
+		return nil
 	}
 
 	err = n.notificationRepo.UpdateTextByChannelID(ctx, *notification.NotificationText, channelID)
@@ -91,13 +97,13 @@ func (n *notificationService) UpdateTextNotification(ctx context.Context, notifi
 
 func (n *notificationService) UpdateFileNotification(ctx context.Context, notification *entity.Notification) error {
 	channelID, err := n.createNotificationIfNotExist(ctx, notification)
-	if channelID == 0 || err == nil {
-		return nil
-	}
-
 	if err != nil {
 		n.log.Error("createNotificationIfNotExist: %v", err)
 		return err
+	}
+
+	if channelID == 0 && err == nil {
+		return nil
 	}
 
 	err = n.notificationRepo.UpdateFileByChannelID(ctx, *notification.FileID, *notification.FileType, channelID)
@@ -110,13 +116,13 @@ func (n *notificationService) UpdateFileNotification(ctx context.Context, notifi
 
 func (n *notificationService) UpdateButtonNotification(ctx context.Context, notification *entity.Notification) error {
 	channelID, err := n.createNotificationIfNotExist(ctx, notification)
-	//if channelID == 0 || err == nil {
-	//	return nil
-	//}
-
 	if err != nil {
 		n.log.Error("createNotificationIfNotExist: %v", err)
 		return err
+	}
+
+	if channelID == 0 && err == nil {
+		return nil
 	}
 
 	err = n.notificationRepo.UpdateButtonByChannelID(ctx, *notification.ButtonURL, channelID)
