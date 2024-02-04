@@ -18,6 +18,7 @@ type ChannelRepo interface {
 	UpdateStatusByTgID(ctx context.Context, status string, telegramID int64) error
 	IsChannelExistByTgID(ctx context.Context, telegramID int64) (bool, error)
 	GetAllAdminChannel(ctx context.Context) ([]entity.Channel, error)
+	GetChannelIDByChannelName(ctx context.Context, channelName string) (int64, error)
 }
 
 type channelRepo struct {
@@ -107,4 +108,12 @@ func (u *channelRepo) GetAllAdminChannel(ctx context.Context) ([]entity.Channel,
 		return nil, err
 	}
 	return u.collectRows(rows)
+}
+
+func (u *channelRepo) GetChannelIDByChannelName(ctx context.Context, channelName string) (int64, error) {
+	query := `select tg_id from channel where channel_name = $1`
+	var ChannelTelegramID int64
+
+	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&ChannelTelegramID)
+	return ChannelTelegramID, err
 }

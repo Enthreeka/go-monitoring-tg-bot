@@ -2,9 +2,11 @@ package tgbot
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"runtime/debug"
 	"sync"
@@ -25,8 +27,9 @@ const (
 )
 
 type Bot struct {
-	bot *tgbotapi.BotAPI
-	log *logger.Logger
+	bot   *tgbotapi.BotAPI
+	log   *logger.Logger
+	store *stateful.Store
 
 	cmdView      map[string]ViewFunc
 	callbackView map[string]ViewFunc
@@ -35,17 +38,20 @@ type Bot struct {
 	userService    service.UserService
 	channelService service.ChannelService
 
-	mu sync.RWMutex
+	mu      sync.RWMutex
+	isDebug bool
 }
 
 func NewBot(bot *tgbotapi.BotAPI,
 	log *logger.Logger,
+	store *stateful.Store,
 	requestService service.RequestService,
 	userService service.UserService,
 	channelService service.ChannelService) *Bot {
 	return &Bot{
 		bot:            bot,
 		log:            log,
+		store:          store,
 		requestService: requestService,
 		userService:    userService,
 		channelService: channelService,
@@ -77,6 +83,9 @@ func (b *Bot) Run(ctx context.Context) error {
 		select {
 		case update := <-updates:
 			updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+
+			b.isDebug = false
+			b.jsonDebug(update.Message)
 
 			b.handlerUpdate(updateCtx, &update)
 
@@ -163,5 +172,15 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
+	}
+}
+
+func (b *Bot) jsonDebug(update any) {
+	if b.isDebug {
+		updateByte, err := json.MarshalIndent(update, "", " ")
+		if err != nil {
+			b.log.Error("%v", err)
+		}
+		b.log.Info("%s", updateByte)
 	}
 }

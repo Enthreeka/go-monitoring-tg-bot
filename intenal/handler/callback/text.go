@@ -30,5 +30,18 @@ const (
 )
 
 func requestApproveThroughTime(seconds int) string {
-	return fmt.Sprintf("Все заявки статуса \"in progress\" были приняты через заданный промежуток времени: :d")
+	return fmt.Sprintf("Все заявки статуса \"in progress\" были приняты через заданный промежуток времени: : %d", seconds)
 }
+
+func notificationSettingText(channel string) string {
+	return fmt.Sprintf("<strong>Управление каналом</strong>\n\n"+
+		"Канал:<i>%s</i> \n"+
+		"", channel)
+}
+
+const (
+	notificationUpdateText   = `Отправьте сообщение, которое будет отправляться новым пользователям`
+	notificationUpdateFile   = `Отправьте файл/фотографию, который будет отправляться новым пользователям`
+	notificationUpdateButton = "Отправьте сообщение и ссылку для создания кнопки, которая будет отправляться новым пользователям. \n" +
+		"Пример сообщения: на чем написан бот?|https://go.dev/"
+)

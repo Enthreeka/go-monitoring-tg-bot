@@ -41,7 +41,7 @@ create table if not exists channel(
 create table if not exists notification(
     id int generated always as identity,
     channel_id bigint,
-    notification_text text not null ,
+    notification_text text null ,
     file_id varchar(150) null,
     file_type varchar(150) null,
     button_url varchar(150) null,

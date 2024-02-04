@@ -26,11 +26,11 @@ func NewExcel(log *logger.Logger) *Excel {
 func (e *Excel) GenerateExcelFile(users []entity.User, username string) (string, error) {
 	start := time.Now()
 
-	e.mu.Lock()
+	//e.mu.Lock()
 	f := excelize.NewFile()
 
 	defer func() {
-		e.mu.Unlock()
+		//e.mu.Unlock()
 		if err := f.Close(); err != nil {
 			e.log.Error("failed to close excel: %v", err)
 		}
@@ -84,12 +84,20 @@ func (e *Excel) GenerateExcelFile(users []entity.User, username string) (string,
 }
 
 func (e *Excel) GetExcelFile(fileName string) (*[]byte, error) {
+	//e.mu.Lock()
+
 	file, err := os.Open(fileName)
 	if err != nil {
 		e.log.Error("os.Open: failed to open file: %v", err)
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		//e.mu.Unlock()
+		err := file.Close()
+		if err != nil {
+			e.log.Error("%v", err)
+		}
+	}()
 
 	fileInfo, err := file.Stat()
 	if err != nil {

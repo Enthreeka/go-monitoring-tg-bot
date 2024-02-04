@@ -11,6 +11,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/excel"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/postgres"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"os"
 	"os/signal"
@@ -20,6 +21,7 @@ import (
 type Bot struct {
 	psql  *postgres.Postgres
 	excel *excel.Excel
+	store *stateful.Store
 
 	userService         service.UserService
 	requestService      service.RequestService
@@ -47,7 +49,7 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 
 	b.userService = service.NewUserService(userRepo, requestRepo, log)
 	b.requestService = service.NewRequestService(requestRepo, log)
-	b.notificationService = service.NewNotificationService(notificationRepo)
+	b.notificationService = service.NewNotificationService(notificationRepo, channelRepo, log)
 	b.channelService = service.NewChannelService(channelRepo, log)
 }
 
@@ -75,6 +77,7 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 	b.notificationCallbackHandler = callback.CallbackNotification{
 		NotificationService: b.notificationService,
 		Log:                 log,
+		Store:               b.store,
 	}
 }
 
@@ -83,9 +86,14 @@ func (b *Bot) initExcel(log *logger.Logger) {
 }
 
 func (b *Bot) initialize(log *logger.Logger) {
+	b.initStore()
 	b.initExcel(log)
 	b.initServices(b.psql, log)
 	b.initHandlers(log)
+}
+
+func (b *Bot) initStore() {
+	b.store = stateful.NewStore()
 }
 
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
@@ -106,7 +114,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	b.initialize(log)
 
-	newBot := tgbot.NewBot(bot, log, b.requestService, b.userService, b.channelService)
+	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService)
 
 	newBot.RegisterCommandView("start", b.generalViewHandler.ViewStart())
 

@@ -4,27 +4,57 @@ import (
 	"context"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 )
 
 type NotificationService interface {
-	Create(ctx context.Context, notification *entity.Notification) error
+	createNotificationIfNotExist(ctx context.Context, notification *entity.Notification) (int64, error)
 	Delete(ctx context.Context, id int) error
 	GetAll(ctx context.Context) ([]entity.Notification, error)
 	GetByChannelID(ctx context.Context, channelID int64) (*entity.Notification, error)
+	UpdateTextNotification(ctx context.Context, notification *entity.Notification) error
+	UpdateFileNotification(ctx context.Context, notification *entity.Notification) error
+	UpdateButtonNotification(ctx context.Context, notification *entity.Notification) error
 }
 
 type notificationService struct {
 	notificationRepo postgres.NotificationRepo
+	channelRepo      postgres.ChannelRepo
+	log              *logger.Logger
 }
 
-func NewNotificationService(notificationRepo postgres.NotificationRepo) NotificationService {
+func NewNotificationService(notificationRepo postgres.NotificationRepo, channelRepo postgres.ChannelRepo, log *logger.Logger) NotificationService {
 	return &notificationService{
 		notificationRepo: notificationRepo,
+		channelRepo:      channelRepo,
+		log:              log,
 	}
 }
 
-func (n *notificationService) Create(ctx context.Context, notification *entity.Notification) error {
-	return n.notificationRepo.Create(ctx, notification)
+func (n *notificationService) createNotificationIfNotExist(ctx context.Context, notification *entity.Notification) (int64, error) {
+	n.log.Info("Get notification: %s", notification.String())
+
+	channelID, err := n.channelRepo.GetChannelIDByChannelName(ctx, notification.ChannelName)
+	if err != nil {
+		n.log.Error("channelRepo.GetChannelIDByChannelName: failed to get channel id: %v", err)
+		return 0, err
+	}
+
+	isExist, err := n.notificationRepo.IsExistNotificationByChannelID(ctx, channelID)
+	if err != nil {
+		n.log.Error("notificationRepo.IsExistNotificationByChannelID: failed to check notification: %v", err)
+		return 0, err
+	}
+
+	if !isExist {
+		err := n.notificationRepo.Create(ctx, notification)
+		if err != nil {
+			n.log.Error("notificationRepo.Create: failed to get create notification: %v", err)
+			return 0, err
+		}
+		return 0, nil
+	}
+	return channelID, nil
 }
 
 func (n *notificationService) Delete(ctx context.Context, id int) error {
@@ -37,4 +67,61 @@ func (n *notificationService) GetAll(ctx context.Context) ([]entity.Notification
 
 func (n *notificationService) GetByChannelID(ctx context.Context, channelID int64) (*entity.Notification, error) {
 	return n.notificationRepo.GetByChannelID(ctx, channelID)
+}
+
+func (n *notificationService) UpdateTextNotification(ctx context.Context, notification *entity.Notification) error {
+	channelID, err := n.createNotificationIfNotExist(ctx, notification)
+	if channelID == 0 || err == nil {
+		return nil
+	}
+
+	if err != nil {
+		n.log.Error("createNotificationIfNotExist: %v", err)
+		return err
+	}
+
+	err = n.notificationRepo.UpdateTextByChannelID(ctx, *notification.NotificationText, channelID)
+	if err != nil {
+		n.log.Error("notificationRepo.UpdateTextByChannelID: failed to update text in notification: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (n *notificationService) UpdateFileNotification(ctx context.Context, notification *entity.Notification) error {
+	channelID, err := n.createNotificationIfNotExist(ctx, notification)
+	if channelID == 0 || err == nil {
+		return nil
+	}
+
+	if err != nil {
+		n.log.Error("createNotificationIfNotExist: %v", err)
+		return err
+	}
+
+	err = n.notificationRepo.UpdateFileByChannelID(ctx, *notification.FileID, *notification.FileType, channelID)
+	if err != nil {
+		n.log.Error("notificationRepo.UpdateFileByChannelID: failed to update file in notification: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (n *notificationService) UpdateButtonNotification(ctx context.Context, notification *entity.Notification) error {
+	channelID, err := n.createNotificationIfNotExist(ctx, notification)
+	if channelID == 0 || err == nil {
+		return nil
+	}
+
+	if err != nil {
+		n.log.Error("createNotificationIfNotExist: %v", err)
+		return err
+	}
+
+	err = n.notificationRepo.UpdateButtonByChannelID(ctx, *notification.ButtonURL, channelID)
+	if err != nil {
+		n.log.Error("notificationRepo.UpdateButtonByChannelID: failed to update button in notification: %v", err)
+		return err
+	}
+	return nil
 }

@@ -9,12 +9,15 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/excel"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"sync"
 )
 
 type CallbackUser struct {
 	UserService service.UserService
 	Log         *logger.Logger
 	Excel       *excel.Excel
+
+	mu sync.Mutex
 }
 
 func (c *CallbackUser) CallbackGetExcelFile() tgbot.ViewFunc {
@@ -26,6 +29,7 @@ func (c *CallbackUser) CallbackGetExcelFile() tgbot.ViewFunc {
 			return nil
 		}
 
+		c.mu.Lock()
 		fileName, err := c.Excel.GenerateExcelFile(users, update.CallbackQuery.From.UserName)
 		if err != nil {
 			c.Log.Error("Excel.GenerateExcelFile: failed to generate excel file: %v", err)
@@ -39,6 +43,7 @@ func (c *CallbackUser) CallbackGetExcelFile() tgbot.ViewFunc {
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))
 			return nil
 		}
+		c.mu.Unlock()
 
 		if fileIDBytes == nil {
 			c.Log.Error("fileIDBytes: %v", boterror.ErrNil)

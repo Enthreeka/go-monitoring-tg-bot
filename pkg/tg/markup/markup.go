@@ -46,5 +46,7 @@ var (
 			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить фотографию", "photo_notification")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить кнопку", "button_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "example_notification")),
 	)
 )
