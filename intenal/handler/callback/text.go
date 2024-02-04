@@ -41,9 +41,13 @@ func notificationSettingText(channel string) string {
 
 const (
 	notificationUpdateText   = `Отправьте сообщение, которое будет отправляться новым пользователям`
-	notificationUpdateFile   = `Отправьте файл/фотографию, который будет отправляться новым пользователям`
+	notificationUpdateFile   = "Отправьте файл/фотографию, который будет отправляться новым пользователям\n\nЕсли отправляете фотографию, то поставьте галочку для сжатия изображения"
 	notificationUpdateButton = "Отправьте сообщение и ссылку для создания кнопки, которая будет отправляться новым пользователям. \n" +
 		"Пример сообщения: на чем написан бот?|https://go.dev/"
-	notificationCancel = "Команда была отменена"
-	notificationEmpty  = "Рассылка отсутствует"
+	notificationCancel       = "Команда была отменена"
+	notificationEmpty        = "Рассылка отсутствует"
+	notificationDeleteText   = "Текст успешно удален"
+	notificationDeleteButton = "Кнопка успешно удалена"
+	notificationDeleteFile   = "Документ/фотография успешно удалена"
+	notificationExampleError = "С кнопкой обязательно должно быть сообщение/файл"
 )

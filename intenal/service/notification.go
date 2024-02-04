@@ -15,6 +15,7 @@ type NotificationService interface {
 	UpdateTextNotification(ctx context.Context, notification *entity.Notification) error
 	UpdateFileNotification(ctx context.Context, notification *entity.Notification) error
 	UpdateButtonNotification(ctx context.Context, notification *entity.Notification) error
+	GetByChannelTelegramID(ctx context.Context, channelTelegramID int64) (*entity.Notification, error)
 }
 
 type notificationService struct {
@@ -91,7 +92,7 @@ func (n *notificationService) UpdateTextNotification(ctx context.Context, notifi
 		return nil
 	}
 
-	return n.notificationRepo.UpdateTextByChannelID(ctx, *notification.NotificationText, channelID)
+	return n.notificationRepo.UpdateTextByChannelID(ctx, notification.NotificationText, channelID)
 }
 
 func (n *notificationService) UpdateFileNotification(ctx context.Context, notification *entity.Notification) error {
@@ -105,7 +106,7 @@ func (n *notificationService) UpdateFileNotification(ctx context.Context, notifi
 		return nil
 	}
 
-	err = n.notificationRepo.UpdateFileByChannelID(ctx, *notification.FileID, *notification.FileType, channelID)
+	err = n.notificationRepo.UpdateFileByChannelID(ctx, notification.FileID, notification.FileType, channelID)
 	if err != nil {
 		n.log.Error("notificationRepo.UpdateFileByChannelID: failed to update file in notification: %v", err)
 		return err
@@ -130,4 +131,8 @@ func (n *notificationService) UpdateButtonNotification(ctx context.Context, noti
 		return err
 	}
 	return nil
+}
+
+func (n *notificationService) GetByChannelTelegramID(ctx context.Context, channelTelegramID int64) (*entity.Notification, error) {
+	return n.notificationRepo.GetByChannelID(ctx, channelTelegramID)
 }

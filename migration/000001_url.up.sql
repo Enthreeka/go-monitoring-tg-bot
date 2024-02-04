@@ -51,6 +51,8 @@ create table if not exists notification(
     references channel (tg_id) on delete cascade
 );
 
+truncate notification;
+
 create table if not exists request(
     id int generated always as identity,
     channel_tg_id bigint not null,

@@ -62,5 +62,8 @@ func (n Notification) String() string {
 
 func GetButtonData(text string) (string, string) {
 	parts := strings.Split(text, "|")
+	if len(parts) != 2 {
+		return "", ""
+	}
 	return parts[0], parts[1]
 }

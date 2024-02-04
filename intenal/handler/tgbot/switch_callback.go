@@ -110,6 +110,27 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
+	case strings.HasPrefix(callbackData, "delete_text_notification"):
+		callbackView, ok := b.callbackView["delete_text_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "delete_photo_notification"):
+		callbackView, ok := b.callbackView["delete_photo_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "delete_button_notification"):
+		callbackView, ok := b.callbackView["delete_button_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
 	default:
 		return nil, nil
 	}

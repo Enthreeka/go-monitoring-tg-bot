@@ -71,8 +71,9 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Excel:       b.excel,
 	}
 	b.requestCallbackHandler = callback.CallbackRequest{
-		RequestService: b.requestService,
-		Log:            log,
+		RequestService:      b.requestService,
+		NotificationService: b.notificationService,
+		Log:                 log,
 	}
 	b.notificationCallbackHandler = callback.CallbackNotification{
 		NotificationService: b.notificationService,
@@ -132,6 +133,9 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("button_notification", b.notificationCallbackHandler.CallbackUpdateButtonNotification())
 	newBot.RegisterCommandCallback("example_notification", b.notificationCallbackHandler.CallbackGetExampleNotification())
 	newBot.RegisterCommandCallback("cancel_setting", b.notificationCallbackHandler.CallbackCancelNotificationSetting())
+	newBot.RegisterCommandCallback("delete_text_notification", b.notificationCallbackHandler.CallbackDeleteTextNotification())
+	newBot.RegisterCommandCallback("delete_photo_notification", b.notificationCallbackHandler.CallbackDeleteFileNotification())
+	newBot.RegisterCommandCallback("delete_button_notification", b.notificationCallbackHandler.CallbackDeleteButtonNotification())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

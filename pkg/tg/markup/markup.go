@@ -41,11 +41,14 @@ var (
 
 	HelloMessageSetting = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить сообщение", "text_notification")),
+			tgbotapi.NewInlineKeyboardButtonData("Изменить сообщение", "text_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить сообщение", "delete_text_notification")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить фотографию", "photo_notification")),
+			tgbotapi.NewInlineKeyboardButtonData("Изменить фотографию", "photo_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить фотографию", "delete_photo_notification")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Изменить/Добавить кнопку", "button_notification")),
+			tgbotapi.NewInlineKeyboardButtonData("Изменить кнопку", "button_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить кнопку", "delete_button_notification")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "example_notification")),
 	)

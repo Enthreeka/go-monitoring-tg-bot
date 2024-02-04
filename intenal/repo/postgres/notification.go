@@ -15,8 +15,8 @@ type NotificationRepo interface {
 	Delete(ctx context.Context, id int) error
 	GetAll(ctx context.Context) ([]entity.Notification, error)
 	GetByChannelID(ctx context.Context, channelID int64) (*entity.Notification, error)
-	UpdateTextByChannelID(ctx context.Context, text string, channelID int64) error
-	UpdateFileByChannelID(ctx context.Context, fileID string, fileType string, channelID int64) error
+	UpdateTextByChannelID(ctx context.Context, text *string, channelID int64) error
+	UpdateFileByChannelID(ctx context.Context, fileID *string, fileType *string, channelID int64) error
 	UpdateButtonByChannelID(ctx context.Context, buttonText *string, buttonURL *string, channelID int64) error
 	IsExistNotificationByChannelID(ctx context.Context, channelID int64) (bool, error)
 }
@@ -91,14 +91,14 @@ func (n *notificationRepo) GetByChannelID(ctx context.Context, channelID int64) 
 	return n.collectRow(row)
 }
 
-func (n *notificationRepo) UpdateTextByChannelID(ctx context.Context, text string, channelID int64) error {
+func (n *notificationRepo) UpdateTextByChannelID(ctx context.Context, text *string, channelID int64) error {
 	query := `update notification set notification_text = $1 where channel_id = $2`
 
 	_, err := n.Pool.Exec(ctx, query, text, channelID)
 	return err
 }
 
-func (n *notificationRepo) UpdateFileByChannelID(ctx context.Context, fileID string, fileType string, channelID int64) error {
+func (n *notificationRepo) UpdateFileByChannelID(ctx context.Context, fileID *string, fileType *string, channelID int64) error {
 	query := `update notification set file_id = $1, file_type = $2 where channel_id = $3`
 
 	_, err := n.Pool.Exec(ctx, query, fileID, fileType, channelID)
