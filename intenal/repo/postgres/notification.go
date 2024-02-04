@@ -17,7 +17,7 @@ type NotificationRepo interface {
 	GetByChannelID(ctx context.Context, channelID int64) (*entity.Notification, error)
 	UpdateTextByChannelID(ctx context.Context, text string, channelID int64) error
 	UpdateFileByChannelID(ctx context.Context, fileID string, fileType string, channelID int64) error
-	UpdateButtonByChannelID(ctx context.Context, button string, channelID int64) error
+	UpdateButtonByChannelID(ctx context.Context, buttonText *string, buttonURL *string, channelID int64) error
 	IsExistNotificationByChannelID(ctx context.Context, channelID int64) (bool, error)
 }
 
@@ -33,7 +33,7 @@ func NewNotificationRepo(pg *postgres.Postgres) NotificationRepo {
 
 func (n *notificationRepo) collectRow(row pgx.Row) (*entity.Notification, error) {
 	var notify entity.Notification
-	err := row.Scan(&notify.ID, &notify.ChannelID, &notify.NotificationText, &notify.FileID, &notify.FileType, &notify.ButtonURL)
+	err := row.Scan(&notify.ID, &notify.ChannelID, &notify.NotificationText, &notify.FileID, &notify.FileType, &notify.ButtonURL, &notify.ButtonText)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, boterror.ErrNoRows
 	}
@@ -55,13 +55,14 @@ func (n *notificationRepo) collectRows(rows pgx.Rows) ([]entity.Notification, er
 }
 
 func (n *notificationRepo) Create(ctx context.Context, notification *entity.Notification) error {
-	query := `insert into notification (channel_id,notification_text,file_id,file_type,button_url) values ($1,$2,$3,$4,$5)`
+	query := `insert into notification (channel_id,notification_text,file_id,file_type,button_url,button_text) values ($1,$2,$3,$4,$5,$6)`
 
 	_, err := n.Pool.Exec(ctx, query, notification.ChannelID,
 		notification.NotificationText,
 		notification.FileID,
 		notification.FileType,
 		notification.ButtonURL,
+		notification.ButtonText,
 	)
 	return err
 }
@@ -104,10 +105,10 @@ func (n *notificationRepo) UpdateFileByChannelID(ctx context.Context, fileID str
 	return err
 }
 
-func (n *notificationRepo) UpdateButtonByChannelID(ctx context.Context, button string, channelID int64) error {
-	query := `update notification set button_url = $1 where channel_id = $2`
+func (n *notificationRepo) UpdateButtonByChannelID(ctx context.Context, buttonText *string, buttonURL *string, channelID int64) error {
+	query := `update notification set button_url = $1, button_text = $2 where channel_id = $3`
 
-	_, err := n.Pool.Exec(ctx, query, button, channelID)
+	_, err := n.Pool.Exec(ctx, query, buttonURL, buttonText, channelID)
 	return err
 }
 

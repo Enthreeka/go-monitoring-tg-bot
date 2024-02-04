@@ -2,6 +2,7 @@ package entity
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Notification struct {
@@ -11,16 +12,18 @@ type Notification struct {
 	FileID           *string `json:"file_id"`
 	FileType         *string `json:"file_type"`
 	ButtonURL        *string `json:"button_url"`
+	ButtonText       *string `json:"button_text"`
 
 	ChannelName string `json:"channel_name,omitempty"`
 }
 
 func (n Notification) String() string {
 	var (
-		text      string
-		fileID    string
-		fileType  string
-		buttonURL string
+		text       string
+		fileID     string
+		fileType   string
+		buttonURL  string
+		buttonText string
 	)
 
 	if n.NotificationText == nil {
@@ -47,6 +50,17 @@ func (n Notification) String() string {
 		buttonURL = *n.ButtonURL
 	}
 
-	return fmt.Sprintf("(id: %d | channel_id: %d | notification_text: %s | file_id: %s | file_type: %s | button_url: %s)",
-		n.ID, n.ChannelID, text, fileID, fileType, buttonURL)
+	if n.ButtonText == nil {
+		buttonText = "nil"
+	} else {
+		buttonText = *n.ButtonText
+	}
+
+	return fmt.Sprintf("(notification_text: %s | file_id: %s | file_type: %s | button_url: %s"+
+		"| button_text: %s)", text, fileID, fileType, buttonURL, buttonText)
+}
+
+func GetButtonData(text string) (string, string) {
+	parts := strings.Split(text, "|")
+	return parts[0], parts[1]
 }

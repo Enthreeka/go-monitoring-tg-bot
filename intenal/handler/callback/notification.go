@@ -2,6 +2,8 @@ package callback
 
 import (
 	"context"
+	"errors"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -117,11 +119,22 @@ func (c *CallbackNotification) CallbackGetExampleNotification() tgbot.ViewFunc {
 		channelName := findTitle(update.CallbackQuery.Message.Text)
 		notification, err := c.NotificationService.GetByChannelName(ctx, channelName)
 		if err != nil {
+			if errors.Is(err, boterror.ErrNoRows) {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, notificationEmpty)); err != nil {
+					c.Log.Error("failed to send message", zap.Error(err))
+					return err
+				}
+				return nil
+			}
 			c.Log.Error("NotificationService.GetByChannelName: failed to get channel: %v", err)
 			return err
 		}
 
-		msg := tgbotapi.NewMessage(update.FromChat().ID, *notification.NotificationText)
+		msg := tgbotapi.NewMessage(update.FromChat().ID, "")
+		if notification.NotificationText != nil {
+			msg.Text = *notification.NotificationText
+		}
+
 		if notification.FileID != nil {
 			//fileID := tgbotapi.FileID(*notification.FileID)
 			//msg := tgbotapi.DocumentConfig{
@@ -136,8 +149,27 @@ func (c *CallbackNotification) CallbackGetExampleNotification() tgbot.ViewFunc {
 			//}
 		}
 
-		if notification.ButtonURL != nil {
-			msg.ReplyMarkup = notification.ButtonURL
+		if notification.ButtonURL != nil || notification.ButtonText != nil {
+			var (
+				btnText string
+				btnURL  string
+			)
+			if notification.ButtonText == nil {
+				btnText = ""
+			} else {
+				btnText = *notification.ButtonText
+				if notification.NotificationText == nil {
+					msg.Text = btnText
+				}
+			}
+			if notification.ButtonURL == nil {
+				btnURL = ""
+			} else {
+				btnURL = *notification.ButtonURL
+			}
+			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonURL(btnText, btnURL)),
+			)
 		}
 
 		if _, err := bot.Send(msg); err != nil {

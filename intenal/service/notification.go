@@ -73,7 +73,11 @@ func (n *notificationService) GetByChannelName(ctx context.Context, channelName 
 		return nil, err
 	}
 
-	return n.notificationRepo.GetByChannelID(ctx, channelID)
+	notification, err := n.notificationRepo.GetByChannelID(ctx, channelID)
+	if err != nil {
+		return nil, err
+	}
+	return notification, nil
 }
 
 func (n *notificationService) UpdateTextNotification(ctx context.Context, notification *entity.Notification) error {
@@ -87,12 +91,7 @@ func (n *notificationService) UpdateTextNotification(ctx context.Context, notifi
 		return nil
 	}
 
-	err = n.notificationRepo.UpdateTextByChannelID(ctx, *notification.NotificationText, channelID)
-	if err != nil {
-		n.log.Error("notificationRepo.UpdateTextByChannelID: failed to update text in notification: %v", err)
-		return err
-	}
-	return nil
+	return n.notificationRepo.UpdateTextByChannelID(ctx, *notification.NotificationText, channelID)
 }
 
 func (n *notificationService) UpdateFileNotification(ctx context.Context, notification *entity.Notification) error {
@@ -125,7 +124,7 @@ func (n *notificationService) UpdateButtonNotification(ctx context.Context, noti
 		return nil
 	}
 
-	err = n.notificationRepo.UpdateButtonByChannelID(ctx, *notification.ButtonURL, channelID)
+	err = n.notificationRepo.UpdateButtonByChannelID(ctx, notification.ButtonURL, notification.ButtonText, channelID)
 	if err != nil {
 		n.log.Error("notificationRepo.UpdateButtonByChannelID: failed to update button in notification: %v", err)
 		return err

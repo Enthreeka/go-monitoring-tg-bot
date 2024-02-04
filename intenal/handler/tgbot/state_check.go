@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	ErrOperationType  = errors.New("operation type not found")
-	ErrEmptyStoreData = errors.New("all values is nil")
+	ErrOperationType   = errors.New("operation type not found")
+	ErrEmptyStoreData  = errors.New("all values is nil")
+	ErrEmptyButtonData = errors.New("button data is empty")
 )
 
 const (
@@ -59,10 +60,10 @@ func (b *Bot) storeDataNotificationOperationType(ctx context.Context, storeData 
 			FileID:           nil,
 			FileType:         nil,
 			ButtonURL:        nil,
+			ButtonText:       nil,
 			ChannelName:      storeData.Notification.ChannelName,
 		}
-		err := b.notificationService.UpdateTextNotification(ctx, notification)
-		if err != nil {
+		if err := b.notificationService.UpdateTextNotification(ctx, notification); err != nil {
 			b.log.Error("notificationService.UpdateTextNotification: failed to work with notification: %v", err)
 			return err
 		}
@@ -74,6 +75,32 @@ func (b *Bot) storeDataNotificationOperationType(ctx context.Context, storeData 
 		return nil
 	case stateful.OperationUpdateFile:
 	case stateful.OperationUpdateButton:
+		defer b.store.Delete(userID)
+
+		url, text := entity.GetButtonData(update.Text)
+		if text == "" && url == "" {
+			return ErrEmptyButtonData
+		}
+
+		notification := &entity.Notification{
+			NotificationText: nil,
+			FileID:           nil,
+			FileType:         nil,
+			ButtonURL:        &url,
+			ButtonText:       &text,
+			ChannelName:      storeData.Notification.ChannelName,
+		}
+
+		if err := b.notificationService.UpdateButtonNotification(ctx, notification); err != nil {
+			b.log.Error("notificationService.UpdateButtonNotification: failed to work with notification: %v", err)
+			return err
+		}
+
+		if _, err := b.bot.Send(tgbotapi.NewMessage(userID, success)); err != nil {
+			b.log.Error("failed to send msg: %v", err)
+			return err
+		}
+		return nil
 	}
 
 	return ErrOperationType
