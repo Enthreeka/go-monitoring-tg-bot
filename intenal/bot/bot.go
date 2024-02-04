@@ -114,7 +114,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	b.initialize(log)
 
-	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService)
+	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService, b.notificationService)
 
 	newBot.RegisterCommandView("start", b.generalViewHandler.ViewStart())
 
@@ -127,6 +127,10 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("rejected_all", b.requestCallbackHandler.CallbackRejectAllRequest())
 	newBot.RegisterCommandCallback("approved_time", b.requestCallbackHandler.CallbackApproveAllThroughTime())
 	newBot.RegisterCommandCallback("hello_setting", b.notificationCallbackHandler.CallbackGetSettingNotification())
+	newBot.RegisterCommandCallback("text_notification", b.notificationCallbackHandler.CallbackUpdateTextNotification())
+	newBot.RegisterCommandCallback("photo_notification", b.notificationCallbackHandler.CallbackUpdateFileNotification())
+	newBot.RegisterCommandCallback("button_notification", b.notificationCallbackHandler.CallbackUpdateButtonNotification())
+	newBot.RegisterCommandCallback("example_notification", b.notificationCallbackHandler.CallbackGetExmapleNotification())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

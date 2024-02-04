@@ -42,14 +42,14 @@ func (c *CallbackNotification) CallbackUpdateTextNotification() tgbot.ViewFunc {
 		// Delete all past state and set new with stateful.OperationUpdateText
 		c.Store.Delete(userID)
 		c.Store.Set(&stateful.StoreData{
-			Channel: &stateful.Channel{
+			Notification: &stateful.Notification{
 				ChannelName:   channelName,
 				OperationType: stateful.OperationUpdateText,
 			},
 		}, userID)
 
 		msg := tgbotapi.NewMessage(userID, notificationUpdateText)
-		msg.ReplyMarkup = &markup.HelloMessageSetting
+		msg.ReplyMarkup = &markup.CancelCommand
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		if _, err := bot.Send(msg); err != nil {
@@ -68,14 +68,14 @@ func (c *CallbackNotification) CallbackUpdateFileNotification() tgbot.ViewFunc {
 		// Delete all past state and set new with stateful.OperationUpdateFile
 		c.Store.Delete(userID)
 		c.Store.Set(&stateful.StoreData{
-			Channel: &stateful.Channel{
+			Notification: &stateful.Notification{
 				ChannelName:   channelName,
 				OperationType: stateful.OperationUpdateFile,
 			},
 		}, userID)
 
 		msg := tgbotapi.NewMessage(userID, notificationUpdateFile)
-		msg.ReplyMarkup = &markup.HelloMessageSetting
+		msg.ReplyMarkup = &markup.CancelCommand
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		if _, err := bot.Send(msg); err != nil {
@@ -94,14 +94,14 @@ func (c *CallbackNotification) CallbackUpdateButtonNotification() tgbot.ViewFunc
 		// Delete all past state and set new with stateful.OperationUpdateButton
 		c.Store.Delete(userID)
 		c.Store.Set(&stateful.StoreData{
-			Channel: &stateful.Channel{
+			Notification: &stateful.Notification{
 				ChannelName:   channelName,
 				OperationType: stateful.OperationUpdateButton,
 			},
 		}, userID)
 
 		msg := tgbotapi.NewMessage(userID, notificationUpdateButton)
-		msg.ReplyMarkup = &markup.HelloMessageSetting
+		msg.ReplyMarkup = &markup.CancelCommand
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		if _, err := bot.Send(msg); err != nil {

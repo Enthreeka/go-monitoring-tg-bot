@@ -49,4 +49,9 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "example_notification")),
 	)
+
+	CancelCommand = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отмена команды", "cancel_setting")),
+	)
 )

@@ -10,8 +10,8 @@ const (
 )
 
 func messageGetChannelInfo(channel string, waitingCount int) string {
-	return fmt.Sprintf("<strong>Управление каналом</strong>\n\n"+
-		"Канал:<i>%s</i> \n"+
+	return fmt.Sprintf("<strong>Управление каналом</strong>\n"+
+		"Канал:<i>%s</i> \n\n"+
 		"Количество людей, которые ожидают принятия: %d", channel, waitingCount)
 }
 
@@ -34,9 +34,9 @@ func requestApproveThroughTime(seconds int) string {
 }
 
 func notificationSettingText(channel string) string {
-	return fmt.Sprintf("<strong>Управление каналом</strong>\n\n"+
-		"Канал:<i>%s</i> \n"+
-		"", channel)
+	return fmt.Sprintf("<strong>Управление рассылок для новых пользователей</strong>\n"+
+		"Канал:<i>%s</i> \n\n"+
+		"Последняя кнопка отправит вам сообщение такого же вида, как это будут видеть новые пользователи", channel)
 }
 
 const (

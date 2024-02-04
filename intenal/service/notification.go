@@ -47,9 +47,10 @@ func (n *notificationService) createNotificationIfNotExist(ctx context.Context, 
 	}
 
 	if !isExist {
+		notification.ChannelID = channelID
 		err := n.notificationRepo.Create(ctx, notification)
 		if err != nil {
-			n.log.Error("notificationRepo.Create: failed to get create notification: %v", err)
+			n.log.Error("notificationRepo.Create: failed to create notification: %v", err)
 			return 0, err
 		}
 		return 0, nil
@@ -109,9 +110,9 @@ func (n *notificationService) UpdateFileNotification(ctx context.Context, notifi
 
 func (n *notificationService) UpdateButtonNotification(ctx context.Context, notification *entity.Notification) error {
 	channelID, err := n.createNotificationIfNotExist(ctx, notification)
-	if channelID == 0 || err == nil {
-		return nil
-	}
+	//if channelID == 0 || err == nil {
+	//	return nil
+	//}
 
 	if err != nil {
 		n.log.Error("createNotificationIfNotExist: %v", err)

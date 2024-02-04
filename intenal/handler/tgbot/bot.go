@@ -34,9 +34,10 @@ type Bot struct {
 	cmdView      map[string]ViewFunc
 	callbackView map[string]ViewFunc
 
-	requestService service.RequestService
-	userService    service.UserService
-	channelService service.ChannelService
+	requestService      service.RequestService
+	userService         service.UserService
+	channelService      service.ChannelService
+	notificationService service.NotificationService
 
 	mu      sync.RWMutex
 	isDebug bool
@@ -47,14 +48,16 @@ func NewBot(bot *tgbotapi.BotAPI,
 	store *stateful.Store,
 	requestService service.RequestService,
 	userService service.UserService,
-	channelService service.ChannelService) *Bot {
+	channelService service.ChannelService,
+	notificationService service.NotificationService) *Bot {
 	return &Bot{
-		bot:            bot,
-		log:            log,
-		store:          store,
-		requestService: requestService,
-		userService:    userService,
-		channelService: channelService,
+		bot:                 bot,
+		log:                 log,
+		store:               store,
+		requestService:      requestService,
+		userService:         userService,
+		channelService:      channelService,
+		notificationService: notificationService,
 	}
 }
 
@@ -103,9 +106,20 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		}
 	}()
 
-	// Если пришло сообщение
+	// if write message
 	if update.Message != nil {
 		b.log.Info("[%s] %s", update.Message.From.UserName, update.Message.Text)
+
+		// check if exist some state, with user message
+		isExist, err := b.getState(ctx, update.Message)
+		if isExist {
+			if err != nil {
+				b.log.Error("failed to work with state: %v", err)
+				handler.HandleError(b.bot, update, err.Error())
+				return
+			}
+			return
+		}
 
 		if err := b.userService.CreateUser(ctx, userUpdateToModel(update)); err != nil {
 			b.log.Error("userService.CreateUser: failed to create user: %v", err)
@@ -128,7 +142,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
-		// Если нажали кнопку
+		//  if press button
 	} else if update.CallbackQuery != nil {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
 
@@ -147,7 +161,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
-		// Если пришла заявка на вступление
+		// if request on join chat
 	} else if update.ChatJoinRequest != nil {
 		b.log.Info("[%s] %s", update.ChatJoinRequest.From.UserName, update.ChatJoinRequest.InviteLink.InviteLink)
 
@@ -163,7 +177,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			return
 		}
 
-		// Если добавляют/удаляют канал
+		// if bot update/delete from channel
 	} else if update.MyChatMember != nil {
 		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
 

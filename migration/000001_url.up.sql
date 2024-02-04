@@ -47,7 +47,7 @@ create table if not exists notification(
     button_url varchar(150) null,
     primary key (id),
     foreign key (channel_id)
-    references channel (id) on delete cascade
+    references channel (tg_id) on delete cascade
 );
 
 

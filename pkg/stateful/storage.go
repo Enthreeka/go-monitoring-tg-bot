@@ -9,12 +9,12 @@ const (
 )
 
 type Channel struct {
-	ChannelName string
-
-	OperationType string
 }
 
 type Notification struct {
+	ChannelName string
+
+	OperationType string
 }
 
 type StoreData struct {
