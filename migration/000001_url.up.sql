@@ -29,6 +29,8 @@ create table if not exists "user"(
     primary key (id)
 );
 
+
+
 create table if not exists channel(
     id int generated always as identity,
     tg_id bigint unique not null,
@@ -38,6 +40,17 @@ create table if not exists channel(
     primary key (id)
 );
 
+create table if not exists user_channel(
+    user_id bigint,
+    channel_tg_id bigint,
+    primary key (user_id,channel_tg_id),
+    foreign key (user_id)
+        references "user" (id) on delete cascade,
+    foreign key (channel_tg_id)
+        references channel (tg_id) on delete cascade
+);
+
+
 create table if not exists notification(
     id int generated always as identity,
     channel_id bigint,
@@ -46,12 +59,11 @@ create table if not exists notification(
     file_type varchar(150) null,
     button_url varchar(150) null,
     button_text varchar(150) null,
+    notification_type varchar(20) not null,
     primary key (id),
     foreign key (channel_id)
     references channel (tg_id) on delete cascade
 );
-
-truncate notification;
 
 create table if not exists request(
     id int generated always as identity,
@@ -65,3 +77,15 @@ create table if not exists request(
         references channel (tg_id) on delete cascade
 );
 
+create table if not exists sender(
+    id int generated always as identity,
+    channel_tg_id bigint not null,
+    message text not null,
+    primary key (id),
+    foreign key (channel_tg_id)
+        references channel (tg_id) on delete cascade
+);
+
+select * from sender
+                  join channel on sender.channel_tg_id = channel.tg_id
+where channel.channel_name = 'chinazez';

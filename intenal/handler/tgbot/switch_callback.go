@@ -75,22 +75,22 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
-	case strings.HasPrefix(callbackData, "text_notification"):
-		callbackView, ok := b.callbackView["text_notification"]
+	case strings.HasPrefix(callbackData, "add_text_notification"):
+		callbackView, ok := b.callbackView["add_text_notification"]
 		if !ok {
 			return ErrNotFound, nil
 		}
 		return nil, callbackView
 
-	case strings.HasPrefix(callbackData, "photo_notification"):
-		callbackView, ok := b.callbackView["photo_notification"]
+	case strings.HasPrefix(callbackData, "add_photo_notification"):
+		callbackView, ok := b.callbackView["add_photo_notification"]
 		if !ok {
 			return ErrNotFound, nil
 		}
 		return nil, callbackView
 
-	case strings.HasPrefix(callbackData, "button_notification"):
-		callbackView, ok := b.callbackView["button_notification"]
+	case strings.HasPrefix(callbackData, "add_button_notification"):
+		callbackView, ok := b.callbackView["add_button_notification"]
 		if !ok {
 			return ErrNotFound, nil
 		}
@@ -126,6 +126,41 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 
 	case strings.HasPrefix(callbackData, "delete_button_notification"):
 		callbackView, ok := b.callbackView["delete_button_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "sender_setting"):
+		callbackView, ok := b.callbackView["sender_setting"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "send_message"):
+		callbackView, ok := b.callbackView["send_message"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "update_sender_message"):
+		callbackView, ok := b.callbackView["update_sender_message"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "delete_sender_message"):
+		callbackView, ok := b.callbackView["delete_sender_message"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "example_sender_message"):
+		callbackView, ok := b.callbackView["example_sender_message"]
 		if !ok {
 			return ErrNotFound, nil
 		}

@@ -26,7 +26,7 @@ func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
 		request, err := c.RequestService.GetAllByStatusRequest(ctx, tgbot.RequestInProgress, channelName)
 		if err != nil {
 			if errors.Is(err, boterror.ErrNoRows) {
-				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestEmpty)); err != nil {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestEmpty)); err != nil {
 					c.Log.Error("failed to send message", zap.Error(err))
 					return err
 				}
@@ -64,7 +64,7 @@ func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
 			}
 		}
 
-		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestApproved)); err != nil {
+		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestApproved)); err != nil {
 			c.Log.Error("failed to send msg: %v", err)
 			return err
 		}
@@ -76,7 +76,7 @@ func (c *CallbackRequest) sendMsgToNewUser(ctx context.Context, userID int64, ch
 	notification, err := c.NotificationService.GetByChannelTelegramID(ctx, channelID)
 	if err != nil {
 		if errors.Is(err, boterror.ErrNoRows) {
-			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, notificationEmpty)); err != nil {
+			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.NotificationEmpty)); err != nil {
 				c.Log.Error("failed to send message", zap.Error(err))
 				return err
 			}
@@ -160,7 +160,7 @@ func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 		request, err := c.RequestService.GetAllByStatusRequest(ctx, tgbot.RequestInProgress, channelName)
 		if err != nil {
 			if errors.Is(err, boterror.ErrNoRows) {
-				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestEmpty)); err != nil {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestEmpty)); err != nil {
 					c.Log.Error("failed to send message", zap.Error(err))
 					return err
 				}
@@ -193,7 +193,7 @@ func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 			}
 		}
 
-		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestDecline)); err != nil {
+		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestDecline)); err != nil {
 			c.Log.Error("failed to send msg: %v", err)
 			return err
 		}
@@ -212,7 +212,7 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 			request, err := c.RequestService.GetAllByStatusRequest(context.Background(), tgbot.RequestInProgress, channelName)
 			if err != nil {
 				if errors.Is(err, boterror.ErrNoRows) {
-					if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestEmpty)); err != nil {
+					if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestEmpty)); err != nil {
 						c.Log.Error("failed to send message", zap.Error(err))
 						return
 					}
@@ -249,7 +249,7 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 				}
 			}
 
-			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, requestApproveThroughTime(seconds))); err != nil {
+			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestApproveThroughTime(seconds))); err != nil {
 				c.Log.Error("failed to send msg: %v", err)
 				return
 			}

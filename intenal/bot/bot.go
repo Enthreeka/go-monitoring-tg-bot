@@ -27,6 +27,7 @@ type Bot struct {
 	requestService      service.RequestService
 	notificationService service.NotificationService
 	channelService      service.ChannelService
+	senderService       service.SenderService
 
 	generalViewHandler view.ViewGeneral
 
@@ -46,11 +47,13 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	requestRepo := pgRepo.NewRequestRepo(psql)
 	notificationRepo := pgRepo.NewNotificationRepo(psql)
 	channelRepo := pgRepo.NewChannelRepo(psql)
+	senderRepo := pgRepo.NewSenderRepo(psql)
 
-	b.userService = service.NewUserService(userRepo, requestRepo, log)
+	b.userService = service.NewUserService(userRepo, requestRepo, channelRepo, log)
 	b.requestService = service.NewRequestService(requestRepo, log)
 	b.notificationService = service.NewNotificationService(notificationRepo, channelRepo, log)
 	b.channelService = service.NewChannelService(channelRepo, log)
+	b.senderService = service.NewSenderService(senderRepo, channelRepo)
 }
 
 func (b *Bot) initHandlers(log *logger.Logger) {
@@ -66,9 +69,11 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Log: log,
 	}
 	b.userCallbackHandler = callback.CallbackUser{
-		Log:         log,
-		UserService: b.userService,
-		Excel:       b.excel,
+		UserService:   b.userService,
+		SenderService: b.senderService,
+		Log:           log,
+		Excel:         b.excel,
+		Store:         b.store,
 	}
 	b.requestCallbackHandler = callback.CallbackRequest{
 		RequestService:      b.requestService,
@@ -115,7 +120,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	b.initialize(log)
 
-	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService, b.notificationService)
+	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService)
 
 	newBot.RegisterCommandView("start", b.generalViewHandler.ViewStart())
 
@@ -128,14 +133,19 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("rejected_all", b.requestCallbackHandler.CallbackRejectAllRequest())
 	newBot.RegisterCommandCallback("approved_time", b.requestCallbackHandler.CallbackApproveAllThroughTime())
 	newBot.RegisterCommandCallback("hello_setting", b.notificationCallbackHandler.CallbackGetSettingNotification())
-	newBot.RegisterCommandCallback("text_notification", b.notificationCallbackHandler.CallbackUpdateTextNotification())
-	newBot.RegisterCommandCallback("photo_notification", b.notificationCallbackHandler.CallbackUpdateFileNotification())
-	newBot.RegisterCommandCallback("button_notification", b.notificationCallbackHandler.CallbackUpdateButtonNotification())
+	newBot.RegisterCommandCallback("add_text_notification", b.notificationCallbackHandler.CallbackUpdateTextNotification())
+	newBot.RegisterCommandCallback("add_photo_notification", b.notificationCallbackHandler.CallbackUpdateFileNotification())
+	newBot.RegisterCommandCallback("add_button_notification", b.notificationCallbackHandler.CallbackUpdateButtonNotification())
 	newBot.RegisterCommandCallback("example_notification", b.notificationCallbackHandler.CallbackGetExampleNotification())
 	newBot.RegisterCommandCallback("cancel_setting", b.notificationCallbackHandler.CallbackCancelNotificationSetting())
 	newBot.RegisterCommandCallback("delete_text_notification", b.notificationCallbackHandler.CallbackDeleteTextNotification())
 	newBot.RegisterCommandCallback("delete_photo_notification", b.notificationCallbackHandler.CallbackDeleteFileNotification())
 	newBot.RegisterCommandCallback("delete_button_notification", b.notificationCallbackHandler.CallbackDeleteButtonNotification())
+	newBot.RegisterCommandCallback("sender_setting", b.userCallbackHandler.CallbackGetUserSenderSetting())
+	newBot.RegisterCommandCallback("send_message", b.userCallbackHandler.CallbackPostMessageToUser())
+	newBot.RegisterCommandCallback("update_sender_message", b.userCallbackHandler.CallbackUpdateUserSenderMessage())
+	newBot.RegisterCommandCallback("delete_sender_message", b.userCallbackHandler.CallbackDeleteUserSenderMessage())
+	newBot.RegisterCommandCallback("example_sender_message", b.userCallbackHandler.CallbackGetExampleUserSenderMessage())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

@@ -13,8 +13,14 @@ type UserRepo interface {
 	GetAllUsers(ctx context.Context) ([]entity.User, error)
 	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
 	UpdateRole(ctx context.Context, role string) error
-	GetAllID(ctx context.Context) ([]*int64, error)
+	GetAllIDByChannelTgID(ctx context.Context, channelTelegramID int64) ([]int64, error)
 	IsUserExistByUsernameTg(ctx context.Context, usernameTg string) (bool, error)
+	UserChannelRepo
+}
+
+type UserChannelRepo interface {
+	CreateUserChannel(ctx context.Context, userID int64, channelTelegramID int64) error
+	IsExistUserChannel(ctx context.Context, userID int64, channelTelegramID int64) (bool, error)
 }
 
 type userRepo struct {
@@ -73,17 +79,19 @@ func (u *userRepo) UpdateRole(ctx context.Context, role string) error {
 	panic("implement me")
 }
 
-func (u *userRepo) GetAllID(ctx context.Context) ([]*int64, error) {
-	query := `select id from "user"`
+func (u *userRepo) GetAllIDByChannelTgID(ctx context.Context, channelTelegramID int64) ([]int64, error) {
+	query := `select id from "user"
+			join user_channel on user_channel.user_id = "user".id
+			where user_channel.channel_tg_id = $1`
 
-	rows, err := u.Pool.Query(ctx, query)
+	rows, err := u.Pool.Query(ctx, query, channelTelegramID)
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
 
-	allID := make([]*int64, 0, 256)
+	allID := make([]int64, 0, 256)
 
 	for rows.Next() {
 		var id int64
@@ -96,7 +104,7 @@ func (u *userRepo) GetAllID(ctx context.Context) ([]*int64, error) {
 			return nil, err
 		}
 
-		allID = append(allID, &id)
+		allID = append(allID, id)
 	}
 	if rows.Err() != nil {
 		return nil, err
@@ -110,6 +118,25 @@ func (u *userRepo) IsUserExistByUsernameTg(ctx context.Context, usernameTg strin
 	var isExist bool
 
 	err := u.Pool.QueryRow(ctx, query, usernameTg).Scan(&isExist)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return isExist, checkErr
+	}
+
+	return isExist, err
+}
+
+func (u *userRepo) CreateUserChannel(ctx context.Context, userID int64, channelTelegramID int64) error {
+	query := `insert into user_channel (user_id, channel_tg_id) values ($1,$2)`
+
+	_, err := u.Pool.Exec(ctx, query, userID, channelTelegramID)
+	return err
+}
+
+func (u *userRepo) IsExistUserChannel(ctx context.Context, userID int64, channelTelegramID int64) (bool, error) {
+	query := `select exists (select user_id from user_channel where user_id = $1 and channel_tg_id = $2)`
+	var isExist bool
+
+	err := u.Pool.QueryRow(ctx, query, userID, channelTelegramID).Scan(&isExist)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return isExist, checkErr
 	}

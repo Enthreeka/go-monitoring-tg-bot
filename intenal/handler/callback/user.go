@@ -2,20 +2,26 @@ package callback
 
 import (
 	"context"
+	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/excel"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.uber.org/zap"
 	"sync"
 )
 
 type CallbackUser struct {
-	UserService service.UserService
-	Log         *logger.Logger
-	Excel       *excel.Excel
+	UserService   service.UserService
+	SenderService service.SenderService
+	Log           *logger.Logger
+	Excel         *excel.Excel
+	Store         *stateful.Store
 
 	mu sync.Mutex
 }
@@ -56,10 +62,151 @@ func (c *CallbackUser) CallbackGetExcelFile() tgbot.ViewFunc {
 			Bytes: *fileIDBytes,
 		})
 		msg.ParseMode = tgbotapi.ModeHTML
-		msg.Caption = userExcelFileText()
+		msg.Caption = handler.UserExcelFileText()
 
 		if _, err = bot.Send(msg); err != nil {
 			c.Log.Error("failed to send msg: %v", err)
+			return err
+		}
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackGetUserSenderSetting() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		userID := update.FromChat().ID
+
+		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID, handler.UserSenderSetting(channelName))
+		msg.ParseMode = tgbotapi.ModeHTML
+		msg.ReplyMarkup = &markup.SenderMessageSetting
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackPostMessageToUser() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		userID := update.FromChat().ID
+
+		sender, err := c.SenderService.GetSender(ctx, channelName)
+		if err != nil {
+			c.Log.Error("SenderService.GetSender: failed to get sender: %v", err)
+			if errors.Is(err, boterror.ErrNoRows) {
+				if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.UserSenderEmpty)); err != nil {
+					c.Log.Error("failed to send message", zap.Error(err))
+					return err
+				}
+				return nil
+			}
+			return err
+		}
+
+		usersID, err := c.UserService.GetAllIDByChannelID(ctx, channelName)
+		if err != nil {
+			c.Log.Error("UserService.GetAllIDByChannelID: failed to get users id: %v", err)
+			if errors.Is(err, boterror.ErrNoRows) {
+				if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.UserSenderErrorEmpty)); err != nil {
+					c.Log.Error("failed to send message", zap.Error(err))
+					return err
+				}
+				return nil
+			}
+			return err
+		}
+
+		for _, id := range usersID {
+			msg := tgbotapi.NewMessage(id, sender.Message)
+			if _, err := bot.Send(msg); err != nil {
+				c.Log.Error("failed to send message to user:%d err:%v", id, zap.Error(err))
+
+				if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.UserSenderError)); err != nil {
+					c.Log.Error("failed to send message", zap.Error(err))
+					return err
+				}
+			}
+		}
+
+		if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.UserSenderDone)); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackUpdateUserSenderMessage() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		userID := update.FromChat().ID
+
+		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID, handler.UserUpdateSenderText)
+		msg.ReplyMarkup = &markup.CancelCommandSender
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		c.Store.Delete(userID)
+		c.Store.Set(&stateful.StoreData{
+			Sender: &stateful.Sender{
+				ChannelName: channelName,
+			},
+		}, userID)
+
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackDeleteUserSenderMessage() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		userID := update.FromChat().ID
+
+		if err := c.SenderService.DeleteSender(ctx, channelName); err != nil {
+			c.Log.Error("SenderService.DeleteSender: failed to delete sender: %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+
+		if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.UserDeleteSenderText)); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackGetExampleUserSenderMessage() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		userID := update.FromChat().ID
+
+		sender, err := c.SenderService.GetSender(ctx, channelName)
+		if err != nil {
+			c.Log.Error("SenderService.GetSender: failed to get sender: %v", err)
+			if errors.Is(err, boterror.ErrNoRows) {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.UserSenderEmpty)); err != nil {
+					c.Log.Error("failed to send message", zap.Error(err))
+					return err
+				}
+				return nil
+			}
+			return err
+		}
+
+		msg := tgbotapi.NewMessage(userID, sender.Message)
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
 		return nil

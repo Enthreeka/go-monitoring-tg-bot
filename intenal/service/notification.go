@@ -8,7 +8,6 @@ import (
 )
 
 type NotificationService interface {
-	createNotificationIfNotExist(ctx context.Context, notification *entity.Notification) (int64, error)
 	Delete(ctx context.Context, id int) error
 	GetAll(ctx context.Context) ([]entity.Notification, error)
 	GetByChannelName(ctx context.Context, channelName string) (*entity.Notification, error)

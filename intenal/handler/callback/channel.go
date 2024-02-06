@@ -27,7 +27,7 @@ func (c *CallbackChannel) CallbackShowAllChannel() tgbot.ViewFunc {
 			return nil
 		}
 
-		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, messageShowAllChannel)
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, handler.MessageShowAllChannel)
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msg.ReplyMarkup = channelMarkup
@@ -63,7 +63,7 @@ func (c *CallbackChannel) CallbackShowChannelInfo() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
-			messageGetChannelInfo(channel.ChannelName, channel.WaitingCount))
+			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount))
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msg.ReplyMarkup = &markup.InfoRequest

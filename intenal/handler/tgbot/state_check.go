@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.uber.org/zap"
 	"net/url"
 )
 
@@ -36,15 +39,22 @@ func (b *Bot) getState(ctx context.Context, update *tgbotapi.Message) (bool, err
 			return true, ErrEmptyStoreData
 		}
 
-		switch typeData {
-		case typeData.(*stateful.Notification):
+		switch typeData.(type) {
+		case *stateful.Notification:
 			if err := b.storeDataNotificationOperationType(ctx, storeData, update); err != nil {
 				b.log.Error("storeDataNotificationOperationType: %v", err)
 				return true, err
 			}
 			return true, nil
-		case typeData.(*stateful.Channel):
 
+		case *stateful.Channel:
+
+		case *stateful.Sender:
+			if err := b.createSenderMessage(ctx, storeData, update); err != nil {
+				b.log.Error("createSenderMessage: %v", err)
+				return true, err
+			}
+			return true, nil
 		}
 
 		return true, nil
@@ -72,7 +82,23 @@ func (b *Bot) storeDataNotificationOperationType(ctx context.Context, storeData 
 			return err
 		}
 
-		if _, err := b.bot.Send(tgbotapi.NewMessage(userID, success)); err != nil {
+		//msgSend, err := b.bot.Send(tgbotapi.NewMessage(userID, success))
+		//if err != nil {
+		//	b.log.Error("failed to send msg: %v", err)
+		//	return err
+		//}
+
+		if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+			storeData.Notification.MessageID)); nil != err || !resp.Ok {
+			b.log.Error("failed to delete message id %d (%s): %v", storeData.Notification.MessageID, string(resp.Result), err)
+		}
+
+		if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+			update.MessageID)); nil != err || !resp.Ok {
+			b.log.Error("failed to delete message id %d (%s): %v", storeData.Notification.MessageID, string(resp.Result), err)
+		}
+
+		if err := b.sendHelloSetting(userID, storeData.Notification.ChannelName); err != nil {
 			b.log.Error("failed to send msg: %v", err)
 			return err
 		}
@@ -106,10 +132,36 @@ func (b *Bot) storeDataNotificationOperationType(ctx context.Context, storeData 
 			return err
 		}
 
-		if _, err := b.bot.Send(tgbotapi.NewMessage(userID, success)); err != nil {
+		_, err := b.bot.Send(tgbotapi.NewMessage(userID, success))
+		if err != nil {
 			b.log.Error("failed to send msg: %v", err)
 			return err
 		}
+
+		if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+			storeData.Notification.MessageID)); nil != err || !resp.Ok {
+			b.log.Error("failed to delete message id %d (%s): %v", storeData.Notification.MessageID, string(resp.Result), err)
+		}
+
+		if err := b.sendHelloSetting(userID, storeData.Notification.ChannelName); err != nil {
+			b.log.Error("failed to send msg: %v", err)
+			return err
+		}
+
+		//if err := b.sendHelloSetting(update, storeData.Notification.ChannelName); err != nil {
+		//	b.log.Error("failed to send msg: %v", err)
+		//	return err
+		//}
+		//if _, err := b.bot.Send(tgbotapi.NewMessage(userID, success)); err != nil {
+		//	b.log.Error("failed to send msg: %v", err)
+		//	return err
+		//}
+
+		//if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+		//	storeData.Notification.MessageID)); nil != err || !resp.Ok {
+		//	b.log.Error("failed to delete message id %d (%s): %v", storeData.Notification.MessageID, string(resp.Result), err)
+		//}
+
 		return nil
 	case stateful.OperationUpdateButton:
 		defer b.store.Delete(userID)
@@ -136,7 +188,28 @@ func (b *Bot) storeDataNotificationOperationType(ctx context.Context, storeData 
 			return err
 		}
 
-		if _, err := b.bot.Send(tgbotapi.NewMessage(userID, success)); err != nil {
+		//if _, err := b.bot.Send(tgbotapi.NewMessage(userID, success)); err != nil {
+		//	b.log.Error("failed to send msg: %v", err)
+		//	return err
+		//}
+		//
+		//if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+		//	storeData.Notification.MessageID)); nil != err || !resp.Ok {
+		//	b.log.Error("failed to delete message id %d (%s): %v", storeData.Notification.MessageID, string(resp.Result), err)
+		//}
+
+		_, err := b.bot.Send(tgbotapi.NewMessage(userID, success))
+		if err != nil {
+			b.log.Error("failed to send msg: %v", err)
+			return err
+		}
+
+		if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+			storeData.Notification.MessageID)); nil != err || !resp.Ok {
+			b.log.Error("failed to delete message id %d (%s): %v", storeData.Notification.MessageID, string(resp.Result), err)
+		}
+
+		if err := b.sendHelloSetting(userID, storeData.Notification.ChannelName); err != nil {
 			b.log.Error("failed to send msg: %v", err)
 			return err
 		}
@@ -146,12 +219,37 @@ func (b *Bot) storeDataNotificationOperationType(ctx context.Context, storeData 
 	return ErrOperationType
 }
 
+func (b *Bot) createSenderMessage(ctx context.Context, storeData *stateful.StoreData, update *tgbotapi.Message) error {
+	userID := update.From.ID
+	defer b.store.Delete(userID)
+
+	sender := &entity.Sender{
+		Message:     update.Text,
+		ChannelName: storeData.Sender.ChannelName,
+	}
+
+	if err := b.senderService.CreateSender(ctx, sender); err != nil {
+		b.log.Error("senderService.CreateSender: failed to create/update sender message: %v", err)
+		return err
+	}
+
+	_, err := b.bot.Send(tgbotapi.NewMessage(userID, success))
+	if err != nil {
+		b.log.Error("failed to send msg: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 func getStoreData(storeData *stateful.StoreData) any {
 	switch {
 	case storeData.Notification != nil:
 		return storeData.Notification
 	case storeData.Channel != nil:
 		return storeData.Channel
+	case storeData.Sender != nil:
+		return storeData.Sender
 	}
 	return nil
 }
@@ -169,4 +267,16 @@ func fileType(update *tgbotapi.Message) string {
 func isUrl(str string) bool {
 	parsedUrl, _ := url.Parse(str)
 	return parsedUrl.Scheme == "" || parsedUrl.Host == ""
+}
+
+func (b *Bot) sendHelloSetting(userID int64, channelName string) error {
+	msg := tgbotapi.NewMessage(userID, handler.NotificationSettingText(channelName))
+	msg.ReplyMarkup = &markup.HelloMessageSetting
+	msg.ParseMode = tgbotapi.ModeHTML
+
+	if _, err := b.bot.Send(msg); err != nil {
+		b.log.Error("failed to send message", zap.Error(err))
+		return err
+	}
+	return nil
 }

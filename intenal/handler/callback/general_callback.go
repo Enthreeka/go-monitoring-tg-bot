@@ -2,6 +2,7 @@ package callback
 
 import (
 	"context"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
@@ -15,7 +16,7 @@ type CallbackGeneral struct {
 
 func (v *CallbackGeneral) CallbackStart() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, generalMainBotMenu)
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, handler.GeneralMainBotMenu)
 		msg.ReplyMarkup = &markup.StartMenu
 		msg.ParseMode = tgbotapi.ModeHTML
 
@@ -29,7 +30,7 @@ func (v *CallbackGeneral) CallbackStart() tgbot.ViewFunc {
 
 func (v *CallbackGeneral) CallbackGetUserSettingMenu() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, generalUserSettingMenu)
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, handler.GeneralUserSettingMenu)
 		msg.ReplyMarkup = &markup.UserSettingMenu
 		msg.ParseMode = tgbotapi.ModeHTML
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -25,7 +26,7 @@ func (c *CallbackNotification) CallbackGetSettingNotification() tgbot.ViewFunc {
 		channelName := findTitle(update.CallbackQuery.Message.Text)
 
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
-			notificationSettingText(channelName))
+			handler.NotificationSettingText(channelName))
 		msg.ReplyMarkup = &markup.HelloMessageSetting
 		msg.ParseMode = tgbotapi.ModeHTML
 
@@ -41,24 +42,28 @@ func (c *CallbackNotification) CallbackUpdateTextNotification() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
 		channelName := findTitle(update.CallbackQuery.Message.Text)
 		userID := update.FromChat().ID
+		messageId := update.CallbackQuery.Message.MessageID
+
+		msg := tgbotapi.NewEditMessageText(userID, messageId, handler.NotificationUpdateText)
+		msg.ReplyMarkup = &markup.CancelCommand
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		msgSend, err := bot.Send(msg)
+		if err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
 
 		// Delete all past state and set new with stateful.OperationUpdateText
 		c.Store.Delete(userID)
 		c.Store.Set(&stateful.StoreData{
 			Notification: &stateful.Notification{
 				ChannelName:   channelName,
+				MessageID:     msgSend.MessageID,
 				OperationType: stateful.OperationUpdateText,
 			},
 		}, userID)
 
-		msg := tgbotapi.NewMessage(userID, notificationUpdateText)
-		msg.ReplyMarkup = &markup.CancelCommand
-		msg.ParseMode = tgbotapi.ModeHTML
-
-		if _, err := bot.Send(msg); err != nil {
-			c.Log.Error("failed to send message", zap.Error(err))
-			return err
-		}
 		return nil
 	}
 }
@@ -67,24 +72,28 @@ func (c *CallbackNotification) CallbackUpdateFileNotification() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
 		channelName := findTitle(update.CallbackQuery.Message.Text)
 		userID := update.FromChat().ID
+		messageId := update.CallbackQuery.Message.MessageID
+
+		msg := tgbotapi.NewEditMessageText(userID, messageId, handler.NotificationUpdateFile)
+		msg.ReplyMarkup = &markup.CancelCommand
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		msgSend, err := bot.Send(msg)
+		if err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
 
 		// Delete all past state and set new with stateful.OperationUpdateFile
 		c.Store.Delete(userID)
 		c.Store.Set(&stateful.StoreData{
 			Notification: &stateful.Notification{
 				ChannelName:   channelName,
+				MessageID:     msgSend.MessageID,
 				OperationType: stateful.OperationUpdateFile,
 			},
 		}, userID)
 
-		msg := tgbotapi.NewMessage(userID, notificationUpdateFile)
-		msg.ReplyMarkup = &markup.CancelCommand
-		msg.ParseMode = tgbotapi.ModeHTML
-
-		if _, err := bot.Send(msg); err != nil {
-			c.Log.Error("failed to send message", zap.Error(err))
-			return err
-		}
 		return nil
 	}
 }
@@ -93,24 +102,28 @@ func (c *CallbackNotification) CallbackUpdateButtonNotification() tgbot.ViewFunc
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
 		channelName := findTitle(update.CallbackQuery.Message.Text)
 		userID := update.FromChat().ID
+		messageId := update.CallbackQuery.Message.MessageID
+
+		msg := tgbotapi.NewEditMessageText(userID, messageId, handler.NotificationUpdateButton)
+		msg.ReplyMarkup = &markup.CancelCommand
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		msgSend, err := bot.Send(msg)
+		if err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
 
 		// Delete all past state and set new with stateful.OperationUpdateButton
 		c.Store.Delete(userID)
 		c.Store.Set(&stateful.StoreData{
 			Notification: &stateful.Notification{
 				ChannelName:   channelName,
+				MessageID:     msgSend.MessageID,
 				OperationType: stateful.OperationUpdateButton,
 			},
 		}, userID)
 
-		msg := tgbotapi.NewMessage(userID, notificationUpdateButton)
-		msg.ReplyMarkup = &markup.CancelCommand
-		msg.ParseMode = tgbotapi.ModeHTML
-
-		if _, err := bot.Send(msg); err != nil {
-			c.Log.Error("failed to send message", zap.Error(err))
-			return err
-		}
 		return nil
 	}
 }
@@ -121,7 +134,7 @@ func (c *CallbackNotification) CallbackGetExampleNotification() tgbot.ViewFunc {
 		notification, err := c.NotificationService.GetByChannelName(ctx, channelName)
 		if err != nil {
 			if errors.Is(err, boterror.ErrNoRows) {
-				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, notificationEmpty)); err != nil {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.NotificationEmpty)); err != nil {
 					c.Log.Error("failed to send message", zap.Error(err))
 					return err
 				}
@@ -195,7 +208,7 @@ func (c *CallbackNotification) CallbackGetExampleNotification() tgbot.ViewFunc {
 			}
 			return nil
 		default:
-			if _, err := bot.Send(tgbotapi.NewMessage(userID, notificationExampleError)); err != nil {
+			if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.NotificationExampleError)); err != nil {
 				c.Log.Error("failed to send message", zap.Error(err))
 				return err
 			}
@@ -226,9 +239,16 @@ func buttonQualifier(buttonURL *string, buttonText *string) *tgbotapi.InlineKeyb
 func (c *CallbackNotification) CallbackCancelNotificationSetting() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
 		userID := update.FromChat().ID
+		data, _ := c.Store.Read(userID)
 		c.Store.Delete(userID)
 
-		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID, notificationCancel)
+		channelName := data.Notification.ChannelName
+
+		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID,
+			handler.NotificationSettingText(channelName))
+		msg.ReplyMarkup = &markup.HelloMessageSetting
+		msg.ParseMode = tgbotapi.ModeHTML
+
 		if _, err := bot.Send(msg); err != nil {
 			c.Log.Error("failed to send message", zap.Error(err))
 			return err
@@ -251,7 +271,7 @@ func (c *CallbackNotification) CallbackDeleteButtonNotification() tgbot.ViewFunc
 			return err
 		}
 
-		if _, err := bot.Send(tgbotapi.NewMessage(userID, notificationDeleteButton)); err != nil {
+		if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.NotificationDeleteButton)); err != nil {
 			c.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
@@ -268,11 +288,11 @@ func (c *CallbackNotification) CallbackDeleteTextNotification() tgbot.ViewFunc {
 			ChannelName:      channelName,
 			NotificationText: nil,
 		}); err != nil {
-			c.Log.Error("NotificationService.UpdateButtonNotification: failed to delete button: %v", err)
+			c.Log.Error("NotificationService.UpdateTextNotification: failed to delete text: %v", err)
 			return err
 		}
 
-		if _, err := bot.Send(tgbotapi.NewMessage(userID, notificationDeleteText)); err != nil {
+		if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.NotificationDeleteText)); err != nil {
 			c.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
@@ -290,11 +310,11 @@ func (c *CallbackNotification) CallbackDeleteFileNotification() tgbot.ViewFunc {
 			FileID:      nil,
 			FileType:    nil,
 		}); err != nil {
-			c.Log.Error("NotificationService.UpdateButtonNotification: failed to delete button: %v", err)
+			c.Log.Error("NotificationService.UpdateButtonNotification: failed to delete file: %v", err)
 			return err
 		}
 
-		if _, err := bot.Send(tgbotapi.NewMessage(userID, notificationDeleteFile)); err != nil {
+		if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.NotificationDeleteFile)); err != nil {
 			c.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}

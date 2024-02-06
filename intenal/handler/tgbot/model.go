@@ -29,6 +29,7 @@ func userUpdateToModel(update *tgbotapi.Update) *entity.User {
 		user.UsernameTg = update.Message.From.UserName
 		user.CreatedAt = time.Now().Local()
 		user.Role = roleUser
+		user.ChannelTelegramID = update.Message.Chat.ID
 	}
 
 	if update.ChatJoinRequest != nil {
@@ -37,6 +38,7 @@ func userUpdateToModel(update *tgbotapi.Update) *entity.User {
 		user.ChannelFrom = &update.ChatJoinRequest.InviteLink.InviteLink
 		user.CreatedAt = time.Now().Local()
 		user.Role = roleUser
+		user.ChannelTelegramID = update.ChatJoinRequest.Chat.ID
 	}
 	return user
 }

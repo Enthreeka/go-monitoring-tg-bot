@@ -38,6 +38,7 @@ type Bot struct {
 	userService         service.UserService
 	channelService      service.ChannelService
 	notificationService service.NotificationService
+	senderService       service.SenderService
 
 	mu      sync.RWMutex
 	isDebug bool
@@ -49,7 +50,8 @@ func NewBot(bot *tgbotapi.BotAPI,
 	requestService service.RequestService,
 	userService service.UserService,
 	channelService service.ChannelService,
-	notificationService service.NotificationService) *Bot {
+	notificationService service.NotificationService,
+	senderService service.SenderService) *Bot {
 	return &Bot{
 		bot:                 bot,
 		log:                 log,
@@ -58,6 +60,7 @@ func NewBot(bot *tgbotapi.BotAPI,
 		userService:         userService,
 		channelService:      channelService,
 		notificationService: notificationService,
+		senderService:       senderService,
 	}
 }
 
@@ -173,6 +176,12 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := b.requestService.CreateRequest(ctx, requestUpdateToModel(update)); err != nil {
 			b.log.Error("requestService.CreateRequest: %v", err)
+			handler.HandleError(b.bot, update, handler.InternalServerError)
+			return
+		}
+
+		if err := b.userService.CreateUserChannel(ctx, update.ChatJoinRequest.From.ID, update.ChatJoinRequest.Chat.ID); err != nil {
+			b.log.Error("userService.CreateUserChannel: %v", err)
 			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}

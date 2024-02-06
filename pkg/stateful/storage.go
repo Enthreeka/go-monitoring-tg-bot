@@ -11,13 +11,19 @@ const (
 type Channel struct {
 }
 
+type Sender struct {
+	ChannelName string
+}
+
 type Notification struct {
 	ChannelName string
+	MessageID   int
 
 	OperationType string
 }
 
 type StoreData struct {
+	Sender       *Sender       `json:"sender"`
 	Channel      *Channel      `json:"channel"`
 	Notification *Notification `json:"notification"`
 }
