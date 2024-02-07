@@ -2,18 +2,21 @@ package service
 
 import (
 	"context"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 )
 
 type UserService interface {
 	CreateUser(ctx context.Context, user *entity.User) error
 	GetAllUsers(ctx context.Context) ([]entity.User, error)
 	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
-	UpdateRole(ctx context.Context, role string) error
+	UpdateRoleByUsername(ctx context.Context, role string, username string) error
 	GetAllIDByChannelID(ctx context.Context, channelName string) ([]int64, error)
 	CreateUserChannel(ctx context.Context, userID int64, channelTelegramID int64) error
+	GetAllAdmin(ctx context.Context) ([]entity.User, error)
 }
 
 type userService struct {
@@ -40,8 +43,30 @@ func (u *userService) GetUserByID(ctx context.Context, id int64) (*entity.User, 
 	return u.userRepo.GetUserByID(ctx, id)
 }
 
-func (u *userService) UpdateRole(ctx context.Context, role string) error {
-	return u.userRepo.UpdateRole(ctx, role)
+func (u *userService) UpdateRoleByUsername(ctx context.Context, role string, username string) error {
+	isExist, err := u.userRepo.IsUserExistByUsernameTg(ctx, username)
+	if err != nil {
+		u.log.Error("userRepo.IsUserExistByUsernameTg: failed to get user: %v", err)
+		return err
+	}
+
+	if !isExist {
+		return boterror.ErrNotFoundUser
+	}
+
+	if role == stateful.OperationDeleteAdmin {
+		user, err := u.userRepo.GetUserByUsername(ctx, username)
+		if err != nil {
+			u.log.Error("userRepo.GetUserByUsername: failed to get user: %v", err)
+			return err
+		}
+
+		if user.Role == "superAdmin" {
+			return boterror.ErrDeleteSuperAdmin
+		}
+	}
+
+	return u.userRepo.UpdateRoleByUsername(ctx, role, username)
 }
 
 func (u *userService) GetAllIDByChannelID(ctx context.Context, channelName string) ([]int64, error) {
@@ -87,4 +112,8 @@ func (u *userService) CreateUserChannel(ctx context.Context, userID int64, chann
 		}
 	}
 	return nil
+}
+
+func (u *userService) GetAllAdmin(ctx context.Context) ([]entity.User, error) {
+	return u.userRepo.GetAllAdmin(ctx)
 }

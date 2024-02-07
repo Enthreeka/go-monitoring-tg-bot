@@ -16,7 +16,6 @@ var (
 	InfoRequest = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Принять всех", "approved_all")),
-		//tgbotapi.NewInlineKeyboardButtonData("Принять часть", "approved_part")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отклонить всех", "rejected_all")),
 		tgbotapi.NewInlineKeyboardRow(
@@ -33,6 +32,8 @@ var (
 	UserSettingMenu = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Скачать Excel файл с пользователя", "download_excel")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Управление ролями(ограниченный доступ)", "role_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 
@@ -71,6 +72,31 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример сообщения", "example_sender_message")),
 		tgbotapi.NewInlineKeyboardRow(button.ComebackSetting),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	SuperAdminSetting = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Назначить администратором", "create_admin")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Назначить супер администратором", "create_super_admin")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Забрать права админа", "delete_admin")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Список администраторов", "all_admin")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "user_setting")),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	CancelAdminCommand = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отмена команды", "cancel_admin_setting")),
+	)
+
+	SuperAdminComeback = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "role_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 )

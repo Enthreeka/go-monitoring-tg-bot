@@ -6,6 +6,10 @@ const (
 	OperationUpdateText   = "update_text"
 	OperationUpdateFile   = "update_file"
 	OperationUpdateButton = "update_button"
+
+	OperationAddAdmin      = "admin"
+	OperationAddSuperAdmin = "superAdmin"
+	OperationDeleteAdmin   = "user"
 )
 
 type Channel struct {
@@ -23,7 +27,14 @@ type Notification struct {
 	OperationType string
 }
 
+type Admin struct {
+	MessageID int
+
+	OperationType string
+}
+
 type StoreData struct {
+	Admin        *Admin        `json:"admin"`
 	Sender       *Sender       `json:"sender"`
 	Channel      *Channel      `json:"channel"`
 	Notification *Notification `json:"notification"`

@@ -180,6 +180,48 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
+	case strings.HasPrefix(callbackData, "role_setting"):
+		callbackView, ok := b.callbackView["role_setting"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "create_admin"):
+		callbackView, ok := b.callbackView["create_admin"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "create_super_admin"):
+		callbackView, ok := b.callbackView["create_super_admin"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "delete_admin"):
+		callbackView, ok := b.callbackView["delete_admin"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "all_admin"):
+		callbackView, ok := b.callbackView["all_admin"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "cancel_admin_setting"):
+		callbackView, ok := b.callbackView["cancel_admin_setting"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
 	default:
 		return nil, nil
 	}

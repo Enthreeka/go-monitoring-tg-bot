@@ -3,6 +3,7 @@ package tgbot
 import (
 	"context"
 	"encoding/json"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -22,8 +23,9 @@ const (
 )
 
 const (
-	roleUser  = "user"
-	roleAdmin = "admin"
+	roleUser       = "user"
+	roleAdmin      = "admin"
+	roleSuperAdmin = "superAdmin"
 )
 
 type Bot struct {
@@ -118,7 +120,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		if isExist {
 			if err != nil {
 				b.log.Error("failed to work with state: %v", err)
-				handler.HandleError(b.bot, update, err.Error())
+				handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 				return
 			}
 			return
@@ -142,7 +144,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := view(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-			handler.HandleError(b.bot, update, handler.InternalServerError)
+			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 		//  if press button
@@ -161,7 +163,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := callback(ctx, b.bot, update); err != nil {
 			b.log.Error("failed to handle update: %v", err)
-			handler.HandleError(b.bot, update, handler.InternalServerError)
+			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 		// if request on join chat
@@ -170,7 +172,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := b.userService.CreateUser(ctx, userUpdateToModel(update)); err != nil {
 			b.log.Error("userService.CreateUser: %v", err)
-			handler.HandleError(b.bot, update, handler.InternalServerError)
+			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 
@@ -182,7 +184,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := b.userService.CreateUserChannel(ctx, update.ChatJoinRequest.From.ID, update.ChatJoinRequest.Chat.ID); err != nil {
 			b.log.Error("userService.CreateUserChannel: %v", err)
-			handler.HandleError(b.bot, update, handler.InternalServerError)
+			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 
@@ -192,7 +194,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
 			b.log.Error("channelService.ChatMember: %v", err)
-			handler.HandleError(b.bot, update, handler.InternalServerError)
+			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 	}

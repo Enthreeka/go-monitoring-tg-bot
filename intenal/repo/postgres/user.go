@@ -12,9 +12,11 @@ type UserRepo interface {
 	CreateUser(ctx context.Context, user *entity.User) error
 	GetAllUsers(ctx context.Context) ([]entity.User, error)
 	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
-	UpdateRole(ctx context.Context, role string) error
+	GetUserByUsername(ctx context.Context, username string) (*entity.User, error)
+	UpdateRoleByUsername(ctx context.Context, role string, username string) error
 	GetAllIDByChannelTgID(ctx context.Context, channelTelegramID int64) ([]int64, error)
 	IsUserExistByUsernameTg(ctx context.Context, usernameTg string) (bool, error)
+	GetAllAdmin(ctx context.Context) ([]entity.User, error)
 	UserChannelRepo
 }
 
@@ -50,6 +52,13 @@ func (u *userRepo) collectRows(rows pgx.Rows) ([]entity.User, error) {
 	})
 }
 
+func (u *userRepo) GetUserByUsername(ctx context.Context, username string) (*entity.User, error) {
+	query := `select * from "user" where tg_username = $1`
+
+	row := u.Pool.QueryRow(ctx, query, username)
+	return u.collectRow(row)
+}
+
 func (u *userRepo) CreateUser(ctx context.Context, user *entity.User) error {
 	query := `insert into "user" (id,tg_username,created_at,phone,channel_from,user_role) values ($1,$2,$3,$4,$5,$6)`
 
@@ -74,9 +83,11 @@ func (u *userRepo) GetUserByID(ctx context.Context, id int64) (*entity.User, err
 	return u.collectRow(row)
 }
 
-func (u *userRepo) UpdateRole(ctx context.Context, role string) error {
-	//TODO implement me
-	panic("implement me")
+func (u *userRepo) UpdateRoleByUsername(ctx context.Context, role string, username string) error {
+	query := `update "user" set user_role = $1 where tg_username = $2`
+
+	_, err := u.Pool.Exec(ctx, query, role, username)
+	return err
 }
 
 func (u *userRepo) GetAllIDByChannelTgID(ctx context.Context, channelTelegramID int64) ([]int64, error) {
@@ -142,4 +153,14 @@ func (u *userRepo) IsExistUserChannel(ctx context.Context, userID int64, channel
 	}
 
 	return isExist, err
+}
+
+func (u *userRepo) GetAllAdmin(ctx context.Context) ([]entity.User, error) {
+	query := `select * from "user" where user_role = 'admin' or user_role = 'superAdmin'`
+
+	rows, err := u.Pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return u.collectRows(rows)
 }

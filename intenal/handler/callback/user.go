@@ -2,6 +2,7 @@ package callback
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
@@ -226,6 +227,140 @@ func (c *CallbackUser) CallbackCancelSenderSetting() tgbot.ViewFunc {
 		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID,
 			handler.UserSenderSetting(channelName))
 		msg.ReplyMarkup = &markup.SenderMessageSetting
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackSuperAdminSetting() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, handler.UserSuperAdminSetting)
+		msg.ReplyMarkup = &markup.SuperAdminSetting
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackSetAdmin() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		userID := update.FromChat().ID
+		messageID := update.CallbackQuery.Message.MessageID
+
+		msg := tgbotapi.NewEditMessageText(userID, messageID, handler.UserSetAdmin)
+		msg.ReplyMarkup = &markup.CancelAdminCommand
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		c.Store.Delete(userID)
+		c.Store.Set(&stateful.StoreData{
+			Admin: &stateful.Admin{
+				OperationType: stateful.OperationAddAdmin,
+				MessageID:     messageID,
+			},
+		}, userID)
+
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackSetSuperAdmin() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		userID := update.FromChat().ID
+		messageID := update.CallbackQuery.Message.MessageID
+
+		msg := tgbotapi.NewEditMessageText(userID, messageID, handler.UserSetSuperAdmin)
+		msg.ReplyMarkup = &markup.CancelAdminCommand
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		c.Store.Delete(userID)
+		c.Store.Set(&stateful.StoreData{
+			Admin: &stateful.Admin{
+				OperationType: stateful.OperationAddSuperAdmin,
+				MessageID:     messageID,
+			},
+		}, userID)
+
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackDeleteAdmin() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		userID := update.FromChat().ID
+		messageID := update.CallbackQuery.Message.MessageID
+
+		msg := tgbotapi.NewEditMessageText(userID, messageID, handler.UserDeleteAdmin)
+		msg.ReplyMarkup = &markup.CancelAdminCommand
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		c.Store.Delete(userID)
+		c.Store.Set(&stateful.StoreData{
+			Admin: &stateful.Admin{
+				OperationType: stateful.OperationDeleteAdmin,
+				MessageID:     messageID,
+			},
+		}, userID)
+
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackGetAllAdmin() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		admin, err := c.UserService.GetAllAdmin(ctx)
+		if err != nil {
+			c.Log.Error("UserService.GetAllAdmin: failed to get admin: %v", err)
+			return err
+		}
+
+		adminBytes, _ := json.MarshalIndent(admin, "", " ")
+
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
+			string(adminBytes))
+		msg.ReplyMarkup = &markup.SuperAdminComeback
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackCancelAdminSetting() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		userID := update.FromChat().ID
+		c.Store.Delete(userID)
+
+		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID,
+			handler.UserSuperAdminSetting)
+		msg.ReplyMarkup = &markup.SuperAdminSetting
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		if _, err := bot.Send(msg); err != nil {

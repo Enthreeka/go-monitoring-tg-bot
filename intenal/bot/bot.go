@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/config"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/callback"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/middleware"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/view"
 	pgRepo "github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
@@ -122,32 +123,39 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService)
 
-	newBot.RegisterCommandView("start", b.generalViewHandler.ViewStart())
+	newBot.RegisterCommandView("start", middleware.AdminMiddleware(b.userService, b.generalViewHandler.ViewStart()))
 
-	newBot.RegisterCommandCallback("main_menu", b.generalCallbackHandler.CallbackStart())
-	newBot.RegisterCommandCallback("channel_setting", b.channelCallbackHandler.CallbackShowAllChannel())
-	newBot.RegisterCommandCallback("channel_get", b.channelCallbackHandler.CallbackShowChannelInfo())
-	newBot.RegisterCommandCallback("user_setting", b.generalCallbackHandler.CallbackGetUserSettingMenu())
-	newBot.RegisterCommandCallback("download_excel", b.userCallbackHandler.CallbackGetExcelFile())
-	newBot.RegisterCommandCallback("approved_all", b.requestCallbackHandler.CallbackApproveAllRequest())
-	newBot.RegisterCommandCallback("rejected_all", b.requestCallbackHandler.CallbackRejectAllRequest())
-	newBot.RegisterCommandCallback("approved_time", b.requestCallbackHandler.CallbackApproveAllThroughTime())
-	newBot.RegisterCommandCallback("hello_setting", b.notificationCallbackHandler.CallbackGetSettingNotification())
-	newBot.RegisterCommandCallback("add_text_notification", b.notificationCallbackHandler.CallbackUpdateTextNotification())
-	newBot.RegisterCommandCallback("add_photo_notification", b.notificationCallbackHandler.CallbackUpdateFileNotification())
-	newBot.RegisterCommandCallback("add_button_notification", b.notificationCallbackHandler.CallbackUpdateButtonNotification())
-	newBot.RegisterCommandCallback("example_notification", b.notificationCallbackHandler.CallbackGetExampleNotification())
-	newBot.RegisterCommandCallback("cancel_setting", b.notificationCallbackHandler.CallbackCancelNotificationSetting())
-	newBot.RegisterCommandCallback("delete_text_notification", b.notificationCallbackHandler.CallbackDeleteTextNotification())
-	newBot.RegisterCommandCallback("delete_photo_notification", b.notificationCallbackHandler.CallbackDeleteFileNotification())
-	newBot.RegisterCommandCallback("delete_button_notification", b.notificationCallbackHandler.CallbackDeleteButtonNotification())
-	newBot.RegisterCommandCallback("sender_setting", b.userCallbackHandler.CallbackGetUserSenderSetting())
-	newBot.RegisterCommandCallback("send_message", b.userCallbackHandler.CallbackPostMessageToUser())
-	newBot.RegisterCommandCallback("update_sender_message", b.userCallbackHandler.CallbackUpdateUserSenderMessage())
-	newBot.RegisterCommandCallback("delete_sender_message", b.userCallbackHandler.CallbackDeleteUserSenderMessage())
-	newBot.RegisterCommandCallback("example_sender_message", b.userCallbackHandler.CallbackGetExampleUserSenderMessage())
-	newBot.RegisterCommandCallback("comeback", b.channelCallbackHandler.CallbackShowChannelInfoByName())
-	newBot.RegisterCommandCallback("cancel_sender_setting", b.userCallbackHandler.CallbackCancelSenderSetting())
+	newBot.RegisterCommandCallback("main_menu", middleware.AdminMiddleware(b.userService, b.generalCallbackHandler.CallbackStart()))
+	newBot.RegisterCommandCallback("channel_setting", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackShowAllChannel()))
+	newBot.RegisterCommandCallback("channel_get", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackShowChannelInfo()))
+	newBot.RegisterCommandCallback("user_setting", middleware.AdminMiddleware(b.userService, b.generalCallbackHandler.CallbackGetUserSettingMenu()))
+	newBot.RegisterCommandCallback("download_excel", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackGetExcelFile()))
+	newBot.RegisterCommandCallback("approved_all", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackApproveAllRequest()))
+	newBot.RegisterCommandCallback("rejected_all", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackRejectAllRequest()))
+	newBot.RegisterCommandCallback("approved_time", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackApproveAllThroughTime()))
+	newBot.RegisterCommandCallback("hello_setting", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGetSettingNotification()))
+	newBot.RegisterCommandCallback("add_text_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackUpdateTextNotification()))
+	newBot.RegisterCommandCallback("add_photo_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackUpdateFileNotification()))
+	newBot.RegisterCommandCallback("add_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackUpdateButtonNotification()))
+	newBot.RegisterCommandCallback("example_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGetExampleNotification()))
+	newBot.RegisterCommandCallback("cancel_setting", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackCancelNotificationSetting()))
+	newBot.RegisterCommandCallback("delete_text_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackDeleteTextNotification()))
+	newBot.RegisterCommandCallback("delete_photo_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackDeleteFileNotification()))
+	newBot.RegisterCommandCallback("delete_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackDeleteButtonNotification()))
+	newBot.RegisterCommandCallback("sender_setting", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackGetUserSenderSetting()))
+	newBot.RegisterCommandCallback("send_message", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackPostMessageToUser()))
+	newBot.RegisterCommandCallback("update_sender_message", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackUpdateUserSenderMessage()))
+	newBot.RegisterCommandCallback("delete_sender_message", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackDeleteUserSenderMessage()))
+	newBot.RegisterCommandCallback("example_sender_message", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackGetExampleUserSenderMessage()))
+	newBot.RegisterCommandCallback("comeback", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackShowChannelInfoByName()))
+	newBot.RegisterCommandCallback("cancel_sender_setting", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackCancelSenderSetting()))
+
+	newBot.RegisterCommandCallback("role_setting", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackSuperAdminSetting()))
+	newBot.RegisterCommandCallback("create_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackSetAdmin()))
+	newBot.RegisterCommandCallback("create_super_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackSetSuperAdmin()))
+	newBot.RegisterCommandCallback("delete_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackDeleteAdmin()))
+	newBot.RegisterCommandCallback("all_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackGetAllAdmin()))
+	newBot.RegisterCommandCallback("cancel_admin_setting", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackCancelAdminSetting()))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

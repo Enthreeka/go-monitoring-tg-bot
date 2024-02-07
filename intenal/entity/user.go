@@ -6,14 +6,14 @@ import (
 )
 
 type User struct {
-	ID          int64     `json:"id"`
+	ID          int64     `json:"id,omitempty"`
 	UsernameTg  string    `json:"tg_username"`
-	Phone       *string   `json:"phone"`
-	ChannelFrom *string   `json:"channel_from"`
-	CreatedAt   time.Time `json:"created_at"`
+	Phone       *string   `json:"phone,omitempty"`
+	ChannelFrom *string   `json:"channel_from,omitempty"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
 	Role        string    `json:"user_role"`
 
-	ChannelTelegramID int64 `json:"channel_telegram_id"`
+	ChannelTelegramID int64 `json:"channel_telegram_id,omitempty"`
 }
 
 func (u User) String() string {

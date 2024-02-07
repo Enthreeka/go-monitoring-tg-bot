@@ -1,7 +1,7 @@
 DO $$
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role') THEN
-            CREATE TYPE role AS ENUM ('user', 'admin');
+            CREATE TYPE role AS ENUM ('user', 'admin','superAdmin');
         END IF;
     END $$;
 
@@ -84,3 +84,5 @@ create table if not exists sender(
     foreign key (channel_tg_id)
         references channel (tg_id) on delete cascade
 );
+
+update "user" set user_role = 'superAdmin' where tg_username = 'n3ksmrnv';
