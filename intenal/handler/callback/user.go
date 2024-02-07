@@ -150,7 +150,8 @@ func (c *CallbackUser) CallbackUpdateUserSenderMessage() tgbot.ViewFunc {
 		msg.ReplyMarkup = &markup.CancelCommandSender
 		msg.ParseMode = tgbotapi.ModeHTML
 
-		if _, err := bot.Send(msg); err != nil {
+		sendMsg, err := bot.Send(msg)
+		if err != nil {
 			c.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
@@ -159,6 +160,7 @@ func (c *CallbackUser) CallbackUpdateUserSenderMessage() tgbot.ViewFunc {
 		c.Store.Set(&stateful.StoreData{
 			Sender: &stateful.Sender{
 				ChannelName: channelName,
+				MessageID:   sendMsg.MessageID,
 			},
 		}, userID)
 
@@ -204,6 +206,27 @@ func (c *CallbackUser) CallbackGetExampleUserSenderMessage() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewMessage(userID, sender.Message)
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackCancelSenderSetting() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		userID := update.FromChat().ID
+		data, _ := c.Store.Read(userID)
+		c.Store.Delete(userID)
+
+		channelName := data.Sender.ChannelName
+
+		msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID,
+			handler.UserSenderSetting(channelName))
+		msg.ReplyMarkup = &markup.SenderMessageSetting
+		msg.ParseMode = tgbotapi.ModeHTML
 
 		if _, err := bot.Send(msg); err != nil {
 			c.Log.Error("failed to send message", zap.Error(err))

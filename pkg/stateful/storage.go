@@ -13,6 +13,7 @@ type Channel struct {
 
 type Sender struct {
 	ChannelName string
+	MessageID   int
 }
 
 type Notification struct {

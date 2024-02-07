@@ -239,6 +239,16 @@ func (b *Bot) createSenderMessage(ctx context.Context, storeData *stateful.Store
 		return err
 	}
 
+	if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+		storeData.Sender.MessageID)); nil != err || !resp.Ok {
+		b.log.Error("failed to delete message id %d (%s): %v", storeData.Sender.MessageID, string(resp.Result), err)
+	}
+
+	if err := b.sendSenderSetting(userID, storeData.Sender.ChannelName); err != nil {
+		b.log.Error("failed to send msg: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -272,6 +282,18 @@ func isUrl(str string) bool {
 func (b *Bot) sendHelloSetting(userID int64, channelName string) error {
 	msg := tgbotapi.NewMessage(userID, handler.NotificationSettingText(channelName))
 	msg.ReplyMarkup = &markup.HelloMessageSetting
+	msg.ParseMode = tgbotapi.ModeHTML
+
+	if _, err := b.bot.Send(msg); err != nil {
+		b.log.Error("failed to send message", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (b *Bot) sendSenderSetting(userID int64, channelName string) error {
+	msg := tgbotapi.NewMessage(userID, handler.UserSenderSetting(channelName))
+	msg.ReplyMarkup = &markup.SenderMessageSetting
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	if _, err := b.bot.Send(msg); err != nil {
