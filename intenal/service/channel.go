@@ -17,6 +17,7 @@ type ChannelService interface {
 	GetAll(ctx context.Context) ([]entity.Channel, error)
 	ChatMember(ctx context.Context, channel *entity.Channel) error
 	GetAllAdminChannel(ctx context.Context) (*tgbotapi.InlineKeyboardMarkup, error)
+	GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error)
 }
 
 type channelService struct {
@@ -110,4 +111,8 @@ func (c *channelService) createChannelMarkup(channel []entity.Channel, command s
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
 
 	return &markup, nil
+}
+
+func (c *channelService) GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error) {
+	return c.channelRepo.GetByChannelName(ctx, channelName)
 }

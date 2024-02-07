@@ -52,7 +52,7 @@ func RequestApproveThroughTime(seconds int) string {
 func NotificationSettingText(channel string) string {
 	return fmt.Sprintf("<strong>Управление рассылок для новых пользователей</strong>\n"+
 		"Канал:<i>%s</i> \n\n"+
-		"Последняя кнопка отправит вам сообщение такого же вида, как это будут видеть новые пользователи", channel)
+		"Кнопка `<u>Отправить пример рассылки</u>` отправит вам сообщение такого же вида, как это будут видеть новые пользователи", channel)
 }
 
 const (

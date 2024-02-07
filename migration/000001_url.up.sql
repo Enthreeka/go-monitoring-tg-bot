@@ -59,7 +59,6 @@ create table if not exists notification(
     file_type varchar(150) null,
     button_url varchar(150) null,
     button_text varchar(150) null,
-    notification_type varchar(20) not null,
     primary key (id),
     foreign key (channel_id)
     references channel (tg_id) on delete cascade
@@ -85,7 +84,3 @@ create table if not exists sender(
     foreign key (channel_tg_id)
         references channel (tg_id) on delete cascade
 );
-
-select * from sender
-                  join channel on sender.channel_tg_id = channel.tg_id
-where channel.channel_name = 'chinazez';

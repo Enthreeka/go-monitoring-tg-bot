@@ -19,6 +19,7 @@ type ChannelRepo interface {
 	IsChannelExistByTgID(ctx context.Context, telegramID int64) (bool, error)
 	GetAllAdminChannel(ctx context.Context) ([]entity.Channel, error)
 	GetChannelIDByChannelName(ctx context.Context, channelName string) (int64, error)
+	GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error)
 }
 
 type channelRepo struct {
@@ -89,6 +90,10 @@ func (u *channelRepo) UpdateStatusByTgID(ctx context.Context, status string, tel
 	query := `update channel set channel_status = $1 where tg_id = $2`
 
 	_, err := u.Pool.Exec(ctx, query, status, telegramID)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return checkErr
+	}
+
 	return err
 }
 
@@ -97,6 +102,10 @@ func (u *channelRepo) IsChannelExistByTgID(ctx context.Context, telegramID int64
 	var isExist bool
 
 	err := u.Pool.QueryRow(ctx, query, telegramID).Scan(&isExist)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return isExist, checkErr
+	}
+
 	return isExist, err
 }
 
@@ -115,5 +124,21 @@ func (u *channelRepo) GetChannelIDByChannelName(ctx context.Context, channelName
 	var ChannelTelegramID int64
 
 	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&ChannelTelegramID)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return 0, checkErr
+	}
+
 	return ChannelTelegramID, err
+}
+
+func (u *channelRepo) GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error) {
+	query := `select * from channel where channel_name = $1`
+	channel := new(entity.Channel)
+
+	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return nil, checkErr
+	}
+
+	return channel, err
 }

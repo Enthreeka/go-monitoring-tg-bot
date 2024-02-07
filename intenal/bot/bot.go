@@ -146,6 +146,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("update_sender_message", b.userCallbackHandler.CallbackUpdateUserSenderMessage())
 	newBot.RegisterCommandCallback("delete_sender_message", b.userCallbackHandler.CallbackDeleteUserSenderMessage())
 	newBot.RegisterCommandCallback("example_sender_message", b.userCallbackHandler.CallbackGetExampleUserSenderMessage())
+	newBot.RegisterCommandCallback("comeback", b.channelCallbackHandler.CallbackShowChannelInfoByName())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

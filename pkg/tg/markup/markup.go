@@ -48,6 +48,8 @@ var (
 			tgbotapi.NewInlineKeyboardButtonData("Удалить кнопку", "delete_button_notification")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "example_notification")),
+		tgbotapi.NewInlineKeyboardRow(button.ComebackSetting),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 
 	CancelCommand = tgbotapi.NewInlineKeyboardMarkup(
@@ -64,10 +66,11 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Сделать рассылку", "send_message")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Создать/изменить сообщение", "update_sender_message")),
-		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить сообщение", "update_sender_message"),
 			tgbotapi.NewInlineKeyboardButtonData("Удалить сообщение", "delete_sender_message")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример сообщения", "example_sender_message")),
+		tgbotapi.NewInlineKeyboardRow(button.ComebackSetting),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 )

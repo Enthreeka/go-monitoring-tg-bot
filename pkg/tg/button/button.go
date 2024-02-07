@@ -6,4 +6,6 @@ var (
 	MainMenuButton = tgbotapi.NewInlineKeyboardButtonData("Вернуться в главное меню", "main_menu")
 
 	AddChannelButton = tgbotapi.NewInlineKeyboardButtonData("Добавить канал", "add_channel")
+
+	ComebackSetting = tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "comeback")
 )

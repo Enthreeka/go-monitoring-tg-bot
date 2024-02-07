@@ -75,3 +75,35 @@ func (c *CallbackChannel) CallbackShowChannelInfo() tgbot.ViewFunc {
 		return nil
 	}
 }
+
+func (c *CallbackChannel) CallbackShowChannelInfoByName() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		c.Log.Info("", channelName)
+		channel, err := c.ChannelService.GetByChannelName(ctx, channelName)
+		if err != nil {
+			c.Log.Error("ChannelService.GetByChannelName: failed to get channel by name: %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+
+		channel.WaitingCount, err = c.RequestService.GetCountByStatusRequestAndChannelTgID(ctx, tgbot.RequestInProgress, channel.TelegramID)
+		if err != nil {
+			c.Log.Error("RequestService.GetCountByStatusRequestAndChannelTgID: failed to get count waiting people:%v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
+			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount))
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		msg.ReplyMarkup = &markup.InfoRequest
+
+		if _, err := bot.Send(msg); err != nil {
+			c.Log.Error("failed to send msg: %v", err)
+			return err
+		}
+		return nil
+	}
+}
