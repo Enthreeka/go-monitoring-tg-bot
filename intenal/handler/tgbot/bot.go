@@ -8,6 +8,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/config"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"runtime/debug"
 	"sync"
@@ -90,6 +91,12 @@ func (b *Bot) Run(ctx context.Context) error {
 	for {
 		select {
 		case update := <-updates:
+
+			_, err := b.bot.Request(config.StartConfigMenu)
+			if err != nil {
+				b.log.Error("failed to request config: %v", err)
+			}
+
 			updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
 			b.isDebug = false

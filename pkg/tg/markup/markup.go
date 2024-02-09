@@ -81,7 +81,7 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Назначить супер администратором", "create_super_admin")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Забрать права админа", "delete_admin")),
+			tgbotapi.NewInlineKeyboardButtonData("Забрать права администратора", "delete_admin")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Список администраторов", "all_admin")),
 		tgbotapi.NewInlineKeyboardRow(
