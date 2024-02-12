@@ -57,12 +57,11 @@ func (r *requestRepo) collectRows(rows pgx.Rows) ([]entity.Request, error) {
 
 func (r *requestRepo) Create(ctx context.Context, request *entity.Request) (*entity.Request, error) {
 	query := `insert into request (user_id,status_request,channel_tg_id,date_request) values ($1,$2,$3,$4) returning *`
+	req := new(entity.Request)
 
-	row, err := r.Pool.Query(ctx, query, request.UserID, request.StatusRequest, request.ChannelTelegramID, request.DateRequest)
-	if err != nil {
-		return nil, err
-	}
-	return r.collectRow(row)
+	err := r.Pool.QueryRow(ctx, query, request.UserID, request.StatusRequest, request.ChannelTelegramID, request.DateRequest).Scan(&req.ID,
+		&req.ChannelTelegramID, &req.UserID, &req.StatusRequest, &req.DateRequest)
+	return req, err
 }
 
 func (r *requestRepo) GetAll(ctx context.Context) ([]entity.Request, error) {
@@ -90,12 +89,12 @@ func (r *requestRepo) GetAllByStatusRequestAndChannelName(ctx context.Context, s
 
 func (r *requestRepo) UpdateStatusRequestByUserID(ctx context.Context, request *entity.Request) (*entity.Request, error) {
 	query := `update request set status_request = $1, date_request = $2 where user_id = $3 returning *`
+	req := new(entity.Request)
 
-	row, err := r.Pool.Query(ctx, query, request.StatusRequest, request.DateRequest, request.UserID)
-	if err != nil {
-		return nil, err
-	}
-	return r.collectRow(row)
+	err := r.Pool.QueryRow(ctx, query, request.StatusRequest, request.DateRequest, request.UserID).Scan(&req.ID,
+		&req.ChannelTelegramID, &req.UserID, &req.StatusRequest, &req.DateRequest)
+
+	return req, err
 }
 
 func (r *requestRepo) DeleteByStatus(ctx context.Context, status string) error {

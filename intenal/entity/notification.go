@@ -65,5 +65,5 @@ func GetButtonData(text string) (string, string) {
 	if len(parts) != 2 {
 		return "", ""
 	}
-	return parts[0], parts[1]
+	return strings.Trim(parts[0], " "), strings.Trim(parts[1], " ")
 }
