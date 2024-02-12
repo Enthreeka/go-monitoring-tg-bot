@@ -46,21 +46,22 @@ func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
 			}
 
 			if _, err := bot.Request(approveRequest); err != nil {
-				c.Log.Error("failed to approve requests: %v", err)
-				return err
+				c.Log.Error("failed to approve requests: %v, request: %v", err, req)
+				//return err
 			}
 
 			if err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestApproved, req.ID); err != nil {
-				c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v", channelName, err)
+				c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
+					channelName, err, req)
 				handler.HandleError(bot, update, boterror.ParseErrToText(err))
-				return nil
+				//return nil
 			}
 
 			err := c.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, bot, update)
 			if err != nil {
-				c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v", channelName, err)
+				c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v, request:%v", channelName, err, req)
 				handler.HandleError(bot, update, boterror.ParseErrToText(err))
-				return nil
+				//return nil
 			}
 		}
 
@@ -182,20 +183,21 @@ func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 			_, err := bot.Request(declineRequest)
 			if err != nil {
 				c.Log.Error("failed to approve requests: %v", err)
-				return err
+				//return err
 			}
 
 			err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestRejected, req.ID)
 			if err != nil {
-				c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v", channelName, err)
+				c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
+					channelName, err, req)
 				handler.HandleError(bot, update, boterror.ParseErrToText(err))
-				return nil
+				//return nil
 			}
 		}
 
 		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestDecline)); err != nil {
 			c.Log.Error("failed to send msg: %v", err)
-			return err
+			//return err
 		}
 		return nil
 	}
@@ -232,7 +234,7 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 				}
 
 				if _, err := bot.Request(approveRequest); err != nil {
-					c.Log.Error("failed to approve requests: %v", err)
+					c.Log.Error("failed to approve requests: %v, request: %v", err, req)
 					return
 				}
 
@@ -243,7 +245,7 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 				}
 
 				if err = c.sendMsgToNewUser(context.Background(), req.UserID, req.ChannelTelegramID, bot, update); err != nil {
-					c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v", channelName, err)
+					c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v, request:%v", channelName, err, req)
 					handler.HandleError(bot, update, boterror.ParseErrToText(err))
 					return
 				}
