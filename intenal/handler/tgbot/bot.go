@@ -3,7 +3,6 @@ package tgbot
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
@@ -198,7 +197,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			return
 		}
 
-		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot, update); err != nil {
+		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot); err != nil {
 			b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
 			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 		}
@@ -225,16 +224,9 @@ func (b *Bot) jsonDebug(update any) {
 	}
 }
 
-func (c *Bot) sendMsgToNewUser(ctx context.Context, userID int64, channelID int64, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+func (c *Bot) sendMsgToNewUser(ctx context.Context, userID int64, channelID int64, bot *tgbotapi.BotAPI) error {
 	notification, err := c.notificationService.GetByChannelTelegramID(ctx, channelID)
 	if err != nil {
-		if errors.Is(err, boterror.ErrNoRows) {
-			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.NotificationEmpty)); err != nil {
-				c.log.Error("failed to send message", zap.Error(err))
-				return err
-			}
-			return nil
-		}
 		c.log.Error("NotificationService.GetByChannelName: failed to get channel: %v", err)
 		return err
 	}
