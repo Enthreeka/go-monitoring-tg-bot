@@ -57,12 +57,12 @@ func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
 				//return nil
 			}
 
-			err := c.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, bot, update)
-			if err != nil {
-				c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v, request:%v", channelName, err, req)
-				handler.HandleError(bot, update, boterror.ParseErrToText(err))
-				//return nil
-			}
+			//err := c.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, bot, update)
+			//if err != nil {
+			//	c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v, request:%v", channelName, err, req)
+			//	handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			//	//return nil
+			//}
 		}
 
 		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestApproved)); err != nil {
@@ -186,13 +186,13 @@ func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 				//return err
 			}
 
-			err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestRejected, req.ID)
-			if err != nil {
-				c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
-					channelName, err, req)
-				handler.HandleError(bot, update, boterror.ParseErrToText(err))
-				//return nil
-			}
+			//err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestRejected, req.ID)
+			//if err != nil {
+			//	c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
+			//		channelName, err, req)
+			//	handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			//	//return nil
+			//}
 		}
 
 		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestDecline)); err != nil {
@@ -282,8 +282,8 @@ func findTitle(caption string) string { // переделать
 		}
 
 		if wordRuneLen == tempLen {
-			if string(el) == " " {
-				return string(channelName[:len(channelName)-1])
+			if string(el) == "\n" {
+				return string(channelName[:len(channelName)-2])
 			}
 			i += 1
 			channelName = append(channelName, captionRune[i])

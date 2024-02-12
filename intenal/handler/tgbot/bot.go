@@ -3,6 +3,7 @@ package tgbot
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
@@ -10,6 +11,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/config"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.uber.org/zap"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -183,7 +185,8 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			return
 		}
 
-		if err := b.requestService.CreateRequest(ctx, requestUpdateToModel(update)); err != nil {
+		req, err := b.requestService.CreateRequest(ctx, requestUpdateToModel(update))
+		if err != nil {
 			b.log.Error("requestService.CreateRequest: %v", err)
 			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
@@ -193,6 +196,11 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			b.log.Error("userService.CreateUserChannel: %v", err)
 			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
+		}
+
+		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot, update); err != nil {
+			b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
+			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 		}
 
 		// if bot update/delete from channel
@@ -215,4 +223,103 @@ func (b *Bot) jsonDebug(update any) {
 		}
 		b.log.Info("%s", updateByte)
 	}
+}
+
+func (c *Bot) sendMsgToNewUser(ctx context.Context, userID int64, channelID int64, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+	notification, err := c.notificationService.GetByChannelTelegramID(ctx, channelID)
+	if err != nil {
+		if errors.Is(err, boterror.ErrNoRows) {
+			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.NotificationEmpty)); err != nil {
+				c.log.Error("failed to send message", zap.Error(err))
+				return err
+			}
+			return nil
+		}
+		c.log.Error("NotificationService.GetByChannelName: failed to get channel: %v", err)
+		return err
+	}
+	var isPhoto bool
+	if notification.FileType != nil {
+		if *notification.FileType == "photo" {
+			isPhoto = true
+		}
+	}
+
+	switch {
+	case notification.FileType == nil && notification.NotificationText != nil:
+		msg := tgbotapi.NewMessage(userID, "")
+		buttonMarkup := buttonQualifier(notification.ButtonURL, notification.ButtonText)
+		if buttonMarkup != nil {
+			msg.ReplyMarkup = &buttonMarkup
+		}
+		if notification.NotificationText != nil {
+			msg.Text = *notification.NotificationText
+		}
+
+		if _, err := bot.Send(msg); err != nil {
+			c.log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+
+	case isPhoto && notification.FileType != nil:
+		notificationPhoto := tgbotapi.NewInputMediaPhoto(tgbotapi.FileID(*notification.FileID))
+		msg := tgbotapi.NewPhoto(userID, notificationPhoto.Media)
+		buttonMarkup := buttonQualifier(notification.ButtonURL, notification.ButtonText)
+		if buttonMarkup != nil {
+			msg.ReplyMarkup = &buttonMarkup
+		}
+		if notification.NotificationText != nil {
+			msg.Caption = *notification.NotificationText
+		}
+
+		if _, err := bot.Send(msg); err != nil {
+			c.log.Error("failed to send message: %v", err)
+			return err
+		}
+		return nil
+
+	case !isPhoto && notification.FileType != nil:
+		msg := tgbotapi.DocumentConfig{
+			BaseFile: tgbotapi.BaseFile{
+				BaseChat: tgbotapi.BaseChat{
+					ChatID: userID,
+				},
+				File: tgbotapi.FileID(*notification.FileID),
+			},
+		}
+		buttonMarkup := buttonQualifier(notification.ButtonURL, notification.ButtonText)
+		if buttonMarkup != nil {
+			msg.ReplyMarkup = &buttonMarkup
+		}
+		if notification.NotificationText != nil {
+			msg.Caption = *notification.NotificationText
+		}
+
+		if _, err := bot.Send(msg); err != nil {
+			c.log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func buttonQualifier(buttonURL *string, buttonText *string) *tgbotapi.InlineKeyboardMarkup {
+	if buttonURL != nil && buttonText != nil {
+		var (
+			btnText string
+			btnURL  string
+		)
+
+		btnText = *buttonText
+		btnURL = *buttonURL
+
+		button := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL(btnText, btnURL)),
+		)
+		return &button
+	}
+	return nil
 }

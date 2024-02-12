@@ -12,12 +12,14 @@ func TestFindTitle(t *testing.T) {
 		wantName string
 	}{
 		{
-			name: "ok",
-			caption: "Управление каналом" +
-				"" +
-				"Канал:chinazez " +
-				"Количество людей, которые ожидают принятия: 2",
-			wantName: "chinazez",
+			name:     "ok",
+			caption:  "Управление каналом\nКанал:Beta test \n\nКоличество людей, которые ожидают принятия: 0",
+			wantName: "Beta test",
+		},
+		{
+			name:     "ok",
+			caption:  "Управление каналом\nКанал:Beta test new channel \n\nКоличество людей, которые ожидают принятия: 0",
+			wantName: "Beta test new channel",
 		},
 	}
 

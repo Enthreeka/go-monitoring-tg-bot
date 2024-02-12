@@ -11,10 +11,10 @@ import (
 )
 
 type RequestRepo interface {
-	Create(ctx context.Context, request *entity.Request) error
+	Create(ctx context.Context, request *entity.Request) (*entity.Request, error)
 	GetAll(ctx context.Context) ([]entity.Request, error)
 	GetAllByStatusRequestAndChannelName(ctx context.Context, status string, channelName string) ([]entity.Request, error)
-	UpdateStatusRequestByUserID(ctx context.Context, request *entity.Request) error
+	UpdateStatusRequestByUserID(ctx context.Context, request *entity.Request) (*entity.Request, error)
 	DeleteByStatus(ctx context.Context, status string) error
 	DeleteByID(ctx context.Context, id int) error
 	GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error)
@@ -55,11 +55,14 @@ func (r *requestRepo) collectRows(rows pgx.Rows) ([]entity.Request, error) {
 	})
 }
 
-func (r *requestRepo) Create(ctx context.Context, request *entity.Request) error {
-	query := `insert into request (user_id,status_request,channel_tg_id,date_request) values ($1,$2,$3,$4)`
+func (r *requestRepo) Create(ctx context.Context, request *entity.Request) (*entity.Request, error) {
+	query := `insert into request (user_id,status_request,channel_tg_id,date_request) values ($1,$2,$3,$4) returning *`
 
-	_, err := r.Pool.Exec(ctx, query, request.UserID, request.StatusRequest, request.ChannelTelegramID, request.DateRequest)
-	return err
+	row, err := r.Pool.Query(ctx, query, request.UserID, request.StatusRequest, request.ChannelTelegramID, request.DateRequest)
+	if err != nil {
+		return nil, err
+	}
+	return r.collectRow(row)
 }
 
 func (r *requestRepo) GetAll(ctx context.Context) ([]entity.Request, error) {
@@ -85,11 +88,14 @@ func (r *requestRepo) GetAllByStatusRequestAndChannelName(ctx context.Context, s
 	return r.collectRows(rows)
 }
 
-func (r *requestRepo) UpdateStatusRequestByUserID(ctx context.Context, request *entity.Request) error {
-	query := `update request set status_request = $1, date_request = $2 where user_id = $3`
+func (r *requestRepo) UpdateStatusRequestByUserID(ctx context.Context, request *entity.Request) (*entity.Request, error) {
+	query := `update request set status_request = $1, date_request = $2 where user_id = $3 returning *`
 
-	_, err := r.Pool.Exec(ctx, query, request.StatusRequest, request.DateRequest, request.UserID)
-	return err
+	row, err := r.Pool.Query(ctx, query, request.StatusRequest, request.DateRequest, request.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return r.collectRow(row)
 }
 
 func (r *requestRepo) DeleteByStatus(ctx context.Context, status string) error {
