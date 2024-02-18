@@ -53,6 +53,10 @@ const (
 	RequestEmpty    = `Запросы отсутствуют`
 )
 
+func RequestError(countErr int8) string {
+	return fmt.Sprintf("Не удалость обработать %d людей", countErr)
+}
+
 func RequestApproveThroughTime(seconds int) string {
 	return fmt.Sprintf("Все заявки статуса \"in progress\" были приняты через заданный промежуток времени: : %d", seconds)
 }

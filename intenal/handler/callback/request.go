@@ -21,7 +21,10 @@ type CallbackRequest struct {
 
 func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		channelName := findTitle(update.CallbackQuery.Message.Text)
+		var (
+			channelName = findTitle(update.CallbackQuery.Message.Text)
+			countErr    int8
+		)
 
 		request, err := c.RequestService.GetAllByStatusRequest(ctx, tgbot.RequestInProgress, channelName)
 		if err != nil {
@@ -47,22 +50,21 @@ func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
 
 			if _, err := bot.Request(approveRequest); err != nil {
 				c.Log.Error("failed to approve requests: %v, request: %v", err, req)
-				//return err
+				countErr++
+				continue
 			}
 
 			if err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestApproved, req.ID); err != nil {
 				c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
 					channelName, err, req)
-				handler.HandleError(bot, update, boterror.ParseErrToText(err))
-				//return nil
 			}
+		}
 
-			//err := c.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, bot, update)
-			//if err != nil {
-			//	c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v, request:%v", channelName, err, req)
-			//	handler.HandleError(bot, update, boterror.ParseErrToText(err))
-			//	//return nil
-			//}
+		if countErr > 0 {
+			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestError(countErr))); err != nil {
+				c.Log.Error("failed to send msg: %v", err)
+				return err
+			}
 		}
 
 		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestApproved)); err != nil {
@@ -156,7 +158,10 @@ func (c *CallbackRequest) sendMsgToNewUser(ctx context.Context, userID int64, ch
 
 func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		channelName := findTitle(update.CallbackQuery.Message.Text)
+		var (
+			channelName = findTitle(update.CallbackQuery.Message.Text)
+			countErr    int8
+		)
 
 		request, err := c.RequestService.GetAllByStatusRequest(ctx, tgbot.RequestInProgress, channelName)
 		if err != nil {
@@ -183,21 +188,25 @@ func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 			_, err := bot.Request(declineRequest)
 			if err != nil {
 				c.Log.Error("failed to approve requests: %v", err)
-				//return err
+				countErr++
+				continue
 			}
 
-			//err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestRejected, req.ID)
-			//if err != nil {
-			//	c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
-			//		channelName, err, req)
-			//	handler.HandleError(bot, update, boterror.ParseErrToText(err))
-			//	//return nil
-			//}
+			err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestRejected, req.ID)
+			if err != nil {
+				c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
+					channelName, err, req)
+			}
+		}
+
+		if countErr > 0 {
+			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestError(countErr))); err != nil {
+				c.Log.Error("failed to send msg: %v", err)
+			}
 		}
 
 		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestDecline)); err != nil {
 			c.Log.Error("failed to send msg: %v", err)
-			//return err
 		}
 		return nil
 	}
@@ -209,7 +218,10 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 			seconds := 600
 			time.Sleep(time.Duration(seconds) * time.Second)
 
-			channelName := findTitle(update.CallbackQuery.Message.Text)
+			var (
+				channelName = findTitle(update.CallbackQuery.Message.Text)
+				countErr    int8
+			)
 
 			request, err := c.RequestService.GetAllByStatusRequest(context.Background(), tgbot.RequestInProgress, channelName)
 			if err != nil {
@@ -235,19 +247,18 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 
 				if _, err := bot.Request(approveRequest); err != nil {
 					c.Log.Error("failed to approve requests: %v, request: %v", err, req)
-					return
+					countErr++
+					continue
 				}
 
 				if err = c.RequestService.UpdateStatusRequestByID(context.Background(), tgbot.RequestApproved, req.ID); err != nil {
 					c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v", channelName, err)
-					handler.HandleError(bot, update, boterror.ParseErrToText(err))
-					return
 				}
+			}
 
-				if err = c.sendMsgToNewUser(context.Background(), req.UserID, req.ChannelTelegramID, bot, update); err != nil {
-					c.Log.Error("sendMsgToNewUser: failed to send msg to new user:%s: %v, request:%v", channelName, err, req)
-					handler.HandleError(bot, update, boterror.ParseErrToText(err))
-					return
+			if countErr > 0 {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestError(countErr))); err != nil {
+					c.Log.Error("failed to send msg: %v", err)
 				}
 			}
 
@@ -261,7 +272,7 @@ func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 	}
 }
 
-func findTitle(caption string) string { // переделать
+func findTitle(caption string) string {
 	var (
 		captionRune = []rune(caption)
 		word        = "Канал:"

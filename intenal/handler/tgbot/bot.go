@@ -180,20 +180,17 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := b.userService.CreateUser(ctx, userUpdateToModel(update)); err != nil {
 			b.log.Error("userService.CreateUser: %v", err)
-			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 
 		req, err := b.requestService.CreateRequest(ctx, requestUpdateToModel(update))
 		if err != nil {
 			b.log.Error("requestService.CreateRequest: %v", err)
-			handler.HandleError(b.bot, update, handler.InternalServerError)
 			return
 		}
 
 		if err := b.userService.CreateUserChannel(ctx, update.ChatJoinRequest.From.ID, update.ChatJoinRequest.Chat.ID); err != nil {
 			b.log.Error("userService.CreateUserChannel: %v", err)
-			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 

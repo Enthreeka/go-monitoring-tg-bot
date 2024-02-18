@@ -17,6 +17,7 @@ type UserRepo interface {
 	GetAllIDByChannelTgID(ctx context.Context, channelTelegramID int64) ([]int64, error)
 	IsUserExistByUsernameTg(ctx context.Context, usernameTg string) (bool, error)
 	GetAllAdmin(ctx context.Context) ([]entity.User, error)
+	IsUserExistByUserID(ctx context.Context, userID int64) (bool, error)
 	UserChannelRepo
 }
 
@@ -163,4 +164,16 @@ func (u *userRepo) GetAllAdmin(ctx context.Context) ([]entity.User, error) {
 		return nil, err
 	}
 	return u.collectRows(rows)
+}
+
+func (u *userRepo) IsUserExistByUserID(ctx context.Context, userID int64) (bool, error) {
+	query := `select exists (select id from "user" where id = $1)`
+	var isExist bool
+
+	err := u.Pool.QueryRow(ctx, query, userID).Scan(&isExist)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return isExist, checkErr
+	}
+
+	return isExist, err
 }

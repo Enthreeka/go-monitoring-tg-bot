@@ -79,7 +79,7 @@ func (u *userService) GetAllIDByChannelID(ctx context.Context, channelName strin
 }
 
 func (u *userService) CreateUser(ctx context.Context, user *entity.User) error {
-	isExist, err := u.userRepo.IsUserExistByUsernameTg(ctx, user.UsernameTg)
+	isExist, err := u.userRepo.IsUserExistByUserID(ctx, user.ID)
 	if err != nil {
 		u.log.Error("userRepo.IsUserExistByUsernameTg: failed to check user: %v", err)
 		return err
