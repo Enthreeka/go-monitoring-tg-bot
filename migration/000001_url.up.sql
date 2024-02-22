@@ -15,7 +15,7 @@ DO $$
 DO $$
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'chan_status') THEN
-            CREATE TYPE chan_status AS ENUM ('kicked','administrator','left');
+            CREATE TYPE chan_status AS ENUM ('kicked','administrator','left','member');
         END IF;
     END $$;
 

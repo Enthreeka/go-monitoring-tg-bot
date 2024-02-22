@@ -101,7 +101,7 @@ func (b *Bot) Run(ctx context.Context) error {
 			updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
 			b.isDebug = false
-			b.jsonDebug(update.Message)
+			b.jsonDebug(update)
 
 			b.handlerUpdate(updateCtx, &update)
 
@@ -196,7 +196,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot); err != nil {
 			b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
-			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
+			return
 		}
 
 		// if bot update/delete from channel

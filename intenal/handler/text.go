@@ -53,12 +53,21 @@ const (
 	RequestEmpty    = `Запросы отсутствуют`
 )
 
-func RequestError(countErr int8) string {
-	return fmt.Sprintf("Не удалость обработать %d людей", countErr)
+func RequestDeclineText(countRejected int) string {
+	return fmt.Sprintf("%d людей было отклонено", countRejected)
+
 }
 
-func RequestApproveThroughTime(seconds int) string {
-	return fmt.Sprintf("Все заявки статуса \"in progress\" были приняты через заданный промежуток времени: : %d", seconds)
+func RequestApprovedText(countApproved int) string {
+	return fmt.Sprintf("%d было принято людей", countApproved)
+}
+
+func RequestError(countErr int) string {
+	return fmt.Sprintf("Со стороны ограничений телеграмма не удалость обработать %d людей", countErr)
+}
+
+func RequestApproveThroughTime(seconds int, countApproved int) string {
+	return fmt.Sprintf("Было принято %d людей через заданный промежуток времени: %d", countApproved, seconds)
 }
 
 func NotificationSettingText(channel string) string {
