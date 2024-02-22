@@ -79,3 +79,8 @@ const (
 	NotificationDeleteFile   = "Документ/фотография успешно удалена"
 	NotificationExampleError = "С кнопкой обязательно должно быть сообщение/файл"
 )
+
+func SpammerSettingText(channel string) string {
+	return fmt.Sprintf("<strong>Управление дополнительными ботами для рассылки</strong>\n"+
+		"Канал:<i>%s</i> \n\n", channel)
+}

@@ -71,6 +71,8 @@ var (
 			tgbotapi.NewInlineKeyboardButtonData("Удалить сообщение", "delete_sender_message")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример сообщения", "example_sender_message")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Управление дополнительными ботами для рассылки", "bot_spam_settings")),
 		tgbotapi.NewInlineKeyboardRow(button.ComebackSetting),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
@@ -97,6 +99,18 @@ var (
 	SuperAdminComeback = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "role_setting")),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	BotSpamSetting = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Добавить бота", "app_spam_bot")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Удалить бота", "delete_spam_bot")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Список подключенных ботов", "list_spam_bot")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "bot_spam_settings")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 )

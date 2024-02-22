@@ -37,6 +37,7 @@ type Bot struct {
 	userCallbackHandler         callback.CallbackUser
 	requestCallbackHandler      callback.CallbackRequest
 	notificationCallbackHandler callback.CallbackNotification
+	spammerCallbackHandler      callback.CallbackSpammer
 }
 
 func NewBot() *Bot {
@@ -85,6 +86,9 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		NotificationService: b.notificationService,
 		Log:                 log,
 		Store:               b.store,
+	}
+	b.spammerCallbackHandler = callback.CallbackSpammer{
+		Log: log,
 	}
 }
 
@@ -156,6 +160,8 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("delete_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackDeleteAdmin()))
 	newBot.RegisterCommandCallback("all_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackGetAllAdmin()))
 	newBot.RegisterCommandCallback("cancel_admin_setting", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackCancelAdminSetting()))
+
+	newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spammerCallbackHandler.CallbackBotSpammerSetting()))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

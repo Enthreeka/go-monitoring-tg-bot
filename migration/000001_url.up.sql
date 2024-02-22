@@ -85,4 +85,6 @@ create table if not exists sender(
         references channel (tg_id) on delete cascade
 );
 
-update "user" set user_role = 'superAdmin' where tg_username = 'n3ksmrnv';
+create table if not exists spam_bot(
+
+);
