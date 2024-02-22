@@ -8,6 +8,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 	"time"
@@ -16,7 +17,9 @@ import (
 type CallbackRequest struct {
 	RequestService      service.RequestService
 	NotificationService service.NotificationService
+	ChannelService      service.ChannelService
 	Log                 *logger.Logger
+	Store               *stateful.Store
 }
 
 func (c *CallbackRequest) CallbackApproveAllRequest() tgbot.ViewFunc {
@@ -317,4 +320,33 @@ func findTitle(caption string) string {
 	}
 
 	return ""
+}
+
+func (c *CallbackRequest) CallbackRequestStatisticForToday() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+
+		channel, err := c.ChannelService.GetByChannelName(ctx, channelName)
+		if err != nil {
+			c.Log.Error("ChannelService.GetByChannelName: failed to get channel by name: %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+
+		countRequest, err := c.RequestService.GetCountRequestTodayByChannelID(ctx, channel.ID)
+		if err != nil {
+			c.Log.Error("RequestService.GetCountRequestToday: failed to get count for today: %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+
+		day, countSentMsg := c.Store.GetSuccessfulSentMsg(channel.TelegramID)
+
+		if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestStatistic(day, countRequest,
+			countSentMsg, channelName))); err != nil {
+			c.Log.Error("failed to send msg: %v", err)
+		}
+
+		return nil
+	}
 }

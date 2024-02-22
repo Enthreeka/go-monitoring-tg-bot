@@ -1,3 +1,5 @@
+set timezone = 'Europe/Moscow';
+
 DO $$
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role') THEN
@@ -29,8 +31,6 @@ create table if not exists "user"(
     primary key (id)
 );
 
-
-
 create table if not exists channel(
     id int generated always as identity,
     tg_id bigint unique not null,
@@ -49,7 +49,6 @@ create table if not exists user_channel(
     foreign key (channel_tg_id)
         references channel (tg_id) on delete cascade
 );
-
 
 create table if not exists notification(
     id int generated always as identity,
@@ -88,3 +87,5 @@ create table if not exists sender(
 create table if not exists spam_bot(
 
 );
+
+select count(*) from user_channel where channel_tg_id = -1002071264074;

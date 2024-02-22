@@ -9,10 +9,11 @@ const (
 	MessageShowAllChannel = `<strong>Ниже представлен список каналов, в которых бот является администратором</strong>`
 )
 
-func MessageGetChannelInfo(channel string, waitingCount int) string {
+func MessageGetChannelInfo(channel string, waitingCount int, userCount int) string {
 	return fmt.Sprintf("<strong>Управление каналом</strong>\n"+
 		"Канал:<i>%s</i> \n\n"+
-		"Количество людей, которые ожидают принятия: %d", channel, waitingCount)
+		"Количество людей, которые ожидают принятия: %d\n\n"+
+		"Количество людей в БД данного канала: %d", channel, waitingCount, userCount)
 }
 
 const (
@@ -68,6 +69,11 @@ func RequestError(countErr int) string {
 
 func RequestApproveThroughTime(seconds int, countApproved int) string {
 	return fmt.Sprintf("Было принято %d людей через заданный промежуток времени: %d", countApproved, seconds)
+}
+
+func RequestStatistic(day int, countRequest int, countSentMsg int64, channelName string) string {
+	return fmt.Sprintf("За число: %d, было сделано рассылок: %d, по каналу: %s. Успешно отправленных сообщений"+
+		" %d", day, countRequest, channelName, countSentMsg)
 }
 
 func NotificationSettingText(channel string) string {

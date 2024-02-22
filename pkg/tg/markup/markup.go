@@ -25,6 +25,8 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Принять через: 600с", "approved_time")),
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Статистика за день", "get_statistic")),
+		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "channel_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)

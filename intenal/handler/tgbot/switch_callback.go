@@ -229,6 +229,13 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
+	case strings.HasPrefix(callbackData, "get_statistic"):
+		callbackView, ok := b.callbackView["get_statistic"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
 	default:
 		return nil, nil
 	}

@@ -17,6 +17,7 @@ type UserService interface {
 	GetAllIDByChannelID(ctx context.Context, channelName string) ([]int64, error)
 	CreateUserChannel(ctx context.Context, userID int64, channelTelegramID int64) error
 	GetAllAdmin(ctx context.Context) ([]entity.User, error)
+	GetCountUserByChannelTgID(ctx context.Context, channelID int64) (int, error)
 }
 
 type userService struct {
@@ -116,4 +117,8 @@ func (u *userService) CreateUserChannel(ctx context.Context, userID int64, chann
 
 func (u *userService) GetAllAdmin(ctx context.Context) ([]entity.User, error) {
 	return u.userRepo.GetAllAdmin(ctx)
+}
+
+func (u *userService) GetCountUserByChannelTgID(ctx context.Context, channelID int64) (int, error) {
+	return u.userRepo.GetCountUserByChannelTgID(ctx, channelID)
 }

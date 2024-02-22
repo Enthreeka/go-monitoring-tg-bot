@@ -199,13 +199,15 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			return
 		}
 
+		// statistic for request in a day
+		b.store.IncrementSuccessfulSentMsg(update.ChatJoinRequest.Chat.ID)
+
 		// if bot update/delete from channel
 	} else if update.MyChatMember != nil {
 		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
 
 		if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
 			b.log.Error("channelService.ChatMember: %v", err)
-			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
 			return
 		}
 	}

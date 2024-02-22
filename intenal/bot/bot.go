@@ -65,6 +65,7 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 	b.channelCallbackHandler = callback.CallbackChannel{
 		ChannelService: b.channelService,
 		RequestService: b.requestService,
+		UserService:    b.userService,
 		Log:            log,
 	}
 	b.generalCallbackHandler = callback.CallbackGeneral{
@@ -80,7 +81,9 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 	b.requestCallbackHandler = callback.CallbackRequest{
 		RequestService:      b.requestService,
 		NotificationService: b.notificationService,
+		ChannelService:      b.channelService,
 		Log:                 log,
+		Store:               b.store,
 	}
 	b.notificationCallbackHandler = callback.CallbackNotification{
 		NotificationService: b.notificationService,
@@ -161,7 +164,9 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("all_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackGetAllAdmin()))
 	newBot.RegisterCommandCallback("cancel_admin_setting", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackCancelAdminSetting()))
 
-	newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spammerCallbackHandler.CallbackBotSpammerSetting()))
+	newBot.RegisterCommandCallback("get_statistic", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackRequestStatisticForToday()))
+
+	//newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spammerCallbackHandler.CallbackBotSpammerSetting()))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

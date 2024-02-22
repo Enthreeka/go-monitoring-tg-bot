@@ -24,6 +24,7 @@ type UserRepo interface {
 type UserChannelRepo interface {
 	CreateUserChannel(ctx context.Context, userID int64, channelTelegramID int64) error
 	IsExistUserChannel(ctx context.Context, userID int64, channelTelegramID int64) (bool, error)
+	GetCountUserByChannelTgID(ctx context.Context, channelID int64) (int, error)
 }
 
 type userRepo struct {
@@ -176,4 +177,16 @@ func (u *userRepo) IsUserExistByUserID(ctx context.Context, userID int64) (bool,
 	}
 
 	return isExist, err
+}
+
+func (u *userRepo) GetCountUserByChannelTgID(ctx context.Context, channelID int64) (int, error) {
+	query := `select count(*) from user_channel where channel_tg_id = $1`
+	var count int
+
+	err := u.Pool.QueryRow(ctx, query, channelID).Scan(&count)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return count, checkErr
+	}
+
+	return count, err
 }
