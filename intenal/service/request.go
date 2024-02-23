@@ -15,7 +15,7 @@ type RequestService interface {
 	DeleteByID(ctx context.Context, id int) error
 	GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error)
 	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
-	GetCountRequestTodayByChannelID(ctx context.Context, id int) (int, error)
+	GetCountRequestTodayByChannelID(ctx context.Context, id int64) (int, error)
 }
 
 type requestService struct {
@@ -85,6 +85,6 @@ func (r *requestService) UpdateStatusRequestByID(ctx context.Context, status str
 	return r.requestRepo.UpdateStatusRequestByID(ctx, status, id)
 }
 
-func (r *requestService) GetCountRequestTodayByChannelID(ctx context.Context, id int) (int, error) {
+func (r *requestService) GetCountRequestTodayByChannelID(ctx context.Context, id int64) (int, error) {
 	return r.requestRepo.GetCountRequestTodayByChannelID(ctx, id)
 }

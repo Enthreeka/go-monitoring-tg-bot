@@ -333,7 +333,7 @@ func (c *CallbackRequest) CallbackRequestStatisticForToday() tgbot.ViewFunc {
 			return nil
 		}
 
-		countRequest, err := c.RequestService.GetCountRequestTodayByChannelID(ctx, channel.ID)
+		countRequest, err := c.RequestService.GetCountRequestTodayByChannelID(ctx, channel.TelegramID)
 		if err != nil {
 			c.Log.Error("RequestService.GetCountRequestToday: failed to get count for today: %v", err)
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))

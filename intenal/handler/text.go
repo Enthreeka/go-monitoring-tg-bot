@@ -13,7 +13,7 @@ func MessageGetChannelInfo(channel string, waitingCount int, userCount int) stri
 	return fmt.Sprintf("<strong>Управление каналом</strong>\n"+
 		"Канал:<i>%s</i> \n\n"+
 		"Количество людей, которые ожидают принятия: %d\n\n"+
-		"Количество людей в БД данного канала: %d", channel, waitingCount, userCount)
+		"Количество людей в базе бота по данному каналу: %d", channel, waitingCount, userCount)
 }
 
 const (

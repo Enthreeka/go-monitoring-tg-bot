@@ -20,7 +20,7 @@ type RequestRepo interface {
 	GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error)
 	IsExistByUserID(ctx context.Context, userID int64) (bool, error)
 	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
-	GetCountRequestTodayByChannelID(ctx context.Context, id int) (int, error)
+	GetCountRequestTodayByChannelID(ctx context.Context, id int64) (int, error)
 }
 
 type requestRepo struct {
@@ -135,7 +135,7 @@ func (r *requestRepo) UpdateStatusRequestByID(ctx context.Context, status string
 	return err
 }
 
-func (r *requestRepo) GetCountRequestTodayByChannelID(ctx context.Context, id int) (int, error) {
+func (r *requestRepo) GetCountRequestTodayByChannelID(ctx context.Context, id int64) (int, error) {
 	query := `select count(*) from request where date_request::date = current_date::date and channel_tg_id = $1`
 	var countRequestToday int
 
