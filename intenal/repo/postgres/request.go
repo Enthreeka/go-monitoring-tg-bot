@@ -18,7 +18,7 @@ type RequestRepo interface {
 	DeleteByStatus(ctx context.Context, status string) error
 	DeleteByID(ctx context.Context, id int) error
 	GetCountByStatusRequestAndChannelTgID(ctx context.Context, status string, channelTgID int64) (int, error)
-	IsExistByUserID(ctx context.Context, userID int64, channelTgID int64) (bool, error)
+	IsExistByUserIDAndChannelID(ctx context.Context, userID int64, channelTgID int64) (bool, error)
 	UpdateStatusRequestByID(ctx context.Context, status string, id int) error
 	GetCountRequestTodayByChannelID(ctx context.Context, id int64) (int, error)
 }
@@ -120,7 +120,7 @@ func (r *requestRepo) GetCountByStatusRequestAndChannelTgID(ctx context.Context,
 	return waitingCount, err
 }
 
-func (r *requestRepo) IsExistByUserID(ctx context.Context, userID int64, channelTgID int64) (bool, error) {
+func (r *requestRepo) IsExistByUserIDAndChannelID(ctx context.Context, userID int64, channelTgID int64) (bool, error) {
 	query := `select exists (select id from request where user_id = $1 and channel_tg_id = $2)`
 	var isExist bool
 
