@@ -36,7 +36,7 @@ func (r *requestService) CreateRequest(ctx context.Context, request *entity.Requ
 		req *entity.Request
 	)
 
-	isExist, err := r.requestRepo.IsExistByUserID(ctx, request.UserID)
+	isExist, err := r.requestRepo.IsExistByUserID(ctx, request.UserID, request.ChannelTelegramID)
 	if err != nil {
 		r.log.Error("requestRepo.IsExistByUserID: failed to check user in requests: %v", err)
 		return nil, err

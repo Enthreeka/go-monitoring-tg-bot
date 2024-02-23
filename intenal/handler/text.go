@@ -18,7 +18,7 @@ func MessageGetChannelInfo(channel string, waitingCount int, userCount int) stri
 
 const (
 	GeneralMainBotMenu     = `<b>Главное меню бота</b>`
-	GeneralUserSettingMenu = "<b>Взаимодествие с данными пользователей</b>"
+	GeneralUserSettingMenu = "<b>Взаимодействие с данными пользователей</b>"
 )
 
 const (
@@ -55,12 +55,12 @@ const (
 )
 
 func RequestDeclineText(countRejected int) string {
-	return fmt.Sprintf("%d людей было отклонено", countRejected)
+	return fmt.Sprintf("Людей было отклонено: %d", countRejected)
 
 }
 
 func RequestApprovedText(countApproved int) string {
-	return fmt.Sprintf("%d было принято людей", countApproved)
+	return fmt.Sprintf("Людей было принято: %d", countApproved)
 }
 
 func RequestError(countErr int) string {
@@ -72,7 +72,7 @@ func RequestApproveThroughTime(seconds int, countApproved int) string {
 }
 
 func RequestStatistic(day int, countRequest int, countSentMsg int64, channelName string) string {
-	return fmt.Sprintf("За число: %d, было сделано рассылок: %d, по каналу: %s. Успешно отправленных сообщений"+
+	return fmt.Sprintf("За число: %d, было подано заявок: %d, по каналу: %s. Успешно отправленных сообщений"+
 		" %d", day, countRequest, channelName, countSentMsg)
 }
 

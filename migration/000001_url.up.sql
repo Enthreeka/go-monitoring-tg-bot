@@ -87,5 +87,3 @@ create table if not exists sender(
 create table if not exists spam_bot(
 
 );
-
-select count(*) from user_channel where channel_tg_id = -1002071264074;

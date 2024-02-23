@@ -100,7 +100,7 @@ func (b *Bot) Run(ctx context.Context) error {
 
 			updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
-			b.isDebug = false
+			b.isDebug = true
 			b.jsonDebug(update)
 
 			b.handlerUpdate(updateCtx, &update)
@@ -204,12 +204,15 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		// if bot update/delete from channel
 	} else if update.MyChatMember != nil {
-		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
 
-		if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
-			b.log.Error("channelService.ChatMember: %v", err)
-			return
+		if update.MyChatMember.Chat.IsChannel() {
+			b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
+			if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
+				b.log.Error("channelService.ChatMember: %v", err)
+				return
+			}
 		}
+
 	}
 }
 
