@@ -84,6 +84,6 @@ create table if not exists sender(
         references channel (tg_id) on delete cascade
 );
 
-create table if not exists spam_bot(
-
-);
+-- create table if not exists spam_bot(
+--
+-- );

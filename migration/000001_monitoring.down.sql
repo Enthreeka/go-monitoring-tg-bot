@@ -1,8 +1,8 @@
 drop table if exists request;
 
-drop table sender;
+drop table if exists sender;
 
-drop table user_channel;
+drop table if exists user_channel;
 
 drop table if exists notification;
 
