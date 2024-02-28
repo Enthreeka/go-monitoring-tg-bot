@@ -10,6 +10,8 @@ drop table if exists channel;
 
 drop table if exists "user";
 
+drop table if exists spam_bot;
+
 drop type if exists chan_status;
 
 drop type if exists req_status;

@@ -29,6 +29,7 @@ type Bot struct {
 	notificationService service.NotificationService
 	channelService      service.ChannelService
 	senderService       service.SenderService
+	spamBotService      service.SpamBotService
 
 	generalViewHandler view.ViewGeneral
 
@@ -37,7 +38,7 @@ type Bot struct {
 	userCallbackHandler         callback.CallbackUser
 	requestCallbackHandler      callback.CallbackRequest
 	notificationCallbackHandler callback.CallbackNotification
-	spammerCallbackHandler      callback.CallbackSpammer
+	spamBotCallbackHandler      callback.CallbackSpamBot
 }
 
 func NewBot() *Bot {
@@ -50,12 +51,14 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	notificationRepo := pgRepo.NewNotificationRepo(psql)
 	channelRepo := pgRepo.NewChannelRepo(psql)
 	senderRepo := pgRepo.NewSenderRepo(psql)
+	spamBotRepo := pgRepo.NewSpamBotRepo(psql)
 
 	b.userService = service.NewUserService(userRepo, requestRepo, channelRepo, log)
 	b.requestService = service.NewRequestService(requestRepo, log)
 	b.notificationService = service.NewNotificationService(notificationRepo, channelRepo, log)
 	b.channelService = service.NewChannelService(channelRepo, log)
 	b.senderService = service.NewSenderService(senderRepo, channelRepo)
+	b.spamBotService = service.NewSpamBotService(userRepo, spamBotRepo)
 }
 
 func (b *Bot) initHandlers(log *logger.Logger) {
@@ -90,7 +93,7 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Log:                 log,
 		Store:               b.store,
 	}
-	b.spammerCallbackHandler = callback.CallbackSpammer{
+	b.spamBotCallbackHandler = callback.CallbackSpamBot{
 		Log: log,
 	}
 }
@@ -166,7 +169,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	newBot.RegisterCommandCallback("get_statistic", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackRequestStatisticForToday()))
 
-	//newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spammerCallbackHandler.CallbackBotSpammerSetting()))
+	newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackBotSpammerSetting()))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

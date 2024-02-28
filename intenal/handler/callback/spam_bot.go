@@ -2,7 +2,6 @@ package callback
 
 import (
 	"context"
-	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
@@ -10,16 +9,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type CallbackSpammer struct {
+type CallbackSpamBot struct {
 	Log *logger.Logger
 }
 
-func (c *CallbackSpammer) CallbackBotSpammerSetting() tgbot.ViewFunc {
+func (c *CallbackSpamBot) CallbackBotSpammerSetting() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		channelName := findTitle(update.CallbackQuery.Message.Text)
-
-		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
-			handler.SpammerSettingText(channelName))
+		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, "TODO")
 		msg.ReplyMarkup = &markup.BotSpamSetting
 		msg.ParseMode = tgbotapi.ModeHTML
 
