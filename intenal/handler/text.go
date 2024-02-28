@@ -99,3 +99,9 @@ func SpammerSettingText(channel string) string {
 	return fmt.Sprintf("<strong>Управление дополнительными ботами для рассылки</strong>\n"+
 		"Канал:<i>%s</i> \n\n", channel)
 }
+
+const (
+	SpamBotAdd    = `Отправьте токен бота`
+	SpamBotDelete = `Выберите бота, которого хотите удалить из базы`
+	SpamBotGet    = `Список всех доступных ботов для рассылок`
+)

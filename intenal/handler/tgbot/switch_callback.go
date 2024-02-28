@@ -236,6 +236,48 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
+	case strings.HasPrefix(callbackData, "bot_get_"):
+		callbackView, ok := b.callbackView["get_statistic"] // todo
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "bot_delete_"):
+		callbackView, ok := b.callbackView["get_statistic"] // todo
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "bot_add_"):
+		callbackView, ok := b.callbackView["get_statistic"] // todo
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "add_spam_bot"):
+		callbackView, ok := b.callbackView["add_spam_bot"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "delete_spam_bot"):
+		callbackView, ok := b.callbackView["delete_spam_bot"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "list_spam_bot"):
+		callbackView, ok := b.callbackView["list_spam_bot"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
 	default:
 		return nil, nil
 	}

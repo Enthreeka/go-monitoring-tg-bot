@@ -108,7 +108,7 @@ var (
 
 	BotSpamSetting = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Добавить бота", "app_spam_bot")),
+			tgbotapi.NewInlineKeyboardButtonData("Добавить бота", "add_spam_bot")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Удалить бота", "delete_spam_bot")),
 		tgbotapi.NewInlineKeyboardRow(

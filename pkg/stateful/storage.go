@@ -13,19 +13,22 @@ const (
 	OperationAddAdmin      = "admin"
 	OperationAddSuperAdmin = "superAdmin"
 	OperationDeleteAdmin   = "user"
+
+	OperationAddBot    = "add_bot"
+	OperationDeleteBot = "delete_bot"
 )
 
 type Channel struct {
 }
 
 type Sender struct {
-	ChannelName string
 	MessageID   int
+	ChannelName string
 }
 
 type Notification struct {
-	ChannelName string
 	MessageID   int
+	ChannelName string
 
 	OperationType string
 }
@@ -36,11 +39,18 @@ type Admin struct {
 	OperationType string
 }
 
+type SpamBot struct {
+	MessageID int
+
+	OperationType string
+}
+
 type StoreData struct {
 	Admin        *Admin        `json:"admin"`
 	Sender       *Sender       `json:"sender"`
 	Channel      *Channel      `json:"channel"`
 	Notification *Notification `json:"notification"`
+	SpamBot      *SpamBot      `json:"spamBot"`
 }
 
 type Store struct {
