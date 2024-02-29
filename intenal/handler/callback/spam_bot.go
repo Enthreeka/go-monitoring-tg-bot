@@ -44,7 +44,7 @@ func (c *CallbackSpamBot) CallbackAddBotSpammer() tgbot.ViewFunc {
 		userID := update.FromChat().ID
 		messageId := update.CallbackQuery.Message.MessageID
 
-		botsMarkup, err := c.SpamBot.GetAllBots(ctx, AddBot)
+		_, err := c.SpamBot.GetAllBots(ctx, AddBot)
 		if err != nil {
 			c.Log.Error("SpamBot.GetAllBots: failed to get bots: %v", err)
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))
@@ -52,7 +52,7 @@ func (c *CallbackSpamBot) CallbackAddBotSpammer() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewEditMessageText(userID, messageId, handler.SpamBotAdd)
-		msg.ReplyMarkup = botsMarkup
+		//msg.ReplyMarkup = botsMarkup
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msgSend, err := bot.Send(msg)

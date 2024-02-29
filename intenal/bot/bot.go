@@ -13,6 +13,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/postgres"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/spam"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"os"
 	"os/signal"
@@ -20,9 +21,10 @@ import (
 )
 
 type Bot struct {
-	psql  *postgres.Postgres
-	excel *excel.Excel
-	store *stateful.Store
+	psql           *postgres.Postgres
+	excel          *excel.Excel
+	store          *stateful.Store
+	spammerStorage spam.SpamBot
 
 	userService         service.UserService
 	requestService      service.RequestService
@@ -58,7 +60,7 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	b.notificationService = service.NewNotificationService(notificationRepo, channelRepo, log)
 	b.channelService = service.NewChannelService(channelRepo, log)
 	b.senderService = service.NewSenderService(senderRepo, channelRepo)
-	b.spamBotService = service.NewSpamBotService(userRepo, spamBotRepo)
+	b.spamBotService = service.NewSpamBotService(userRepo, spamBotRepo, b.spammerStorage, log)
 }
 
 func (b *Bot) initHandlers(log *logger.Logger) {
@@ -94,7 +96,9 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Store:               b.store,
 	}
 	b.spamBotCallbackHandler = callback.CallbackSpamBot{
-		Log: log,
+		SpamBot: b.spamBotService,
+		Store:   b.store,
+		Log:     log,
 	}
 }
 
@@ -102,15 +106,25 @@ func (b *Bot) initExcel(log *logger.Logger) {
 	b.excel = excel.NewExcel(log)
 }
 
-func (b *Bot) initialize(log *logger.Logger) {
+func (b *Bot) initialize(ctx context.Context, log *logger.Logger) {
 	b.initStore()
 	b.initExcel(log)
 	b.initServices(b.psql, log)
 	b.initHandlers(log)
+	b.initSpamBotConstructor(log)
+	b.initSpamStorage(ctx)
 }
 
 func (b *Bot) initStore() {
 	b.store = stateful.NewStore()
+}
+
+func (b *Bot) initSpamBotConstructor(log *logger.Logger) {
+	b.spammerStorage = spam.NewSpammerBot(log)
+}
+
+func (b *Bot) initSpamStorage(ctx context.Context) {
+	b.spamBotService.GetSpamBotsFromDBToCache(ctx)
 }
 
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
@@ -129,9 +143,12 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	defer psql.Close()
 	b.psql = psql
 
-	b.initialize(log)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
-	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService)
+	b.initialize(ctx, log)
+
+	newBot := tgbot.NewBot(bot, log, b.store, b.spammerStorage, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService, b.spamBotService)
 
 	newBot.RegisterCommandView("start", middleware.AdminMiddleware(b.userService, b.generalViewHandler.ViewStart()))
 
@@ -173,9 +190,6 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("add_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackAddBotSpammer()))
 	newBot.RegisterCommandCallback("delete_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackDeleteBotSpammer()))
 	newBot.RegisterCommandCallback("list_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackShowAllBotSpammer()))
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
 
 	if err := newBot.Run(ctx); err != nil {
 		log.Error("failed to run tgbot: %v", err)

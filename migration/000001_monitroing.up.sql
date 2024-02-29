@@ -87,6 +87,6 @@ create table if not exists sender(
 create table if not exists spam_bot(
     id int generated always as identity,
     token varchar(255),
-    channelName varchar(150) null,
+    bot_name varchar(150) null,
     primary key (id)
 );

@@ -14,6 +14,7 @@ type SpamBotRepo interface {
 	Create(ctx context.Context, bot *entity.SpamBot) error
 	GetAll(ctx context.Context) ([]entity.SpamBot, error)
 	Delete(ctx context.Context, id int) error
+	GetByID(ctx context.Context, id int) (*entity.SpamBot, error)
 }
 
 type spamBotRepo struct {
@@ -28,7 +29,7 @@ func NewSpamBotRepo(pg *postgres.Postgres) SpamBotRepo {
 
 func (r *spamBotRepo) collectRow(row pgx.Row) (*entity.SpamBot, error) {
 	var bot entity.SpamBot
-	err := row.Scan(&bot.ID, &bot.Token, &bot.ChannelName)
+	err := row.Scan(&bot.ID, &bot.Token, &bot.BotName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, boterror.ErrNoRows
 	}
@@ -50,9 +51,9 @@ func (r *spamBotRepo) collectRows(rows pgx.Rows) ([]entity.SpamBot, error) {
 }
 
 func (s *spamBotRepo) Create(ctx context.Context, bot *entity.SpamBot) error {
-	query := `insert into spam_bot (token,channel_name) values ($1,$2)`
+	query := `insert into spam_bot (token,bot_name) values ($1,$2)`
 
-	_, err := s.Pool.Exec(ctx, query, bot.Token, bot.ChannelName)
+	_, err := s.Pool.Exec(ctx, query, bot.Token, bot.BotName)
 	return err
 }
 
@@ -71,4 +72,12 @@ func (s *spamBotRepo) Delete(ctx context.Context, id int) error {
 
 	_, err := s.Pool.Exec(ctx, query, id)
 	return err
+}
+
+func (s *spamBotRepo) GetByID(ctx context.Context, id int) (*entity.SpamBot, error) {
+	query := `select * from spam_bot where id = $1`
+	bot := new(entity.SpamBot)
+
+	err := s.Pool.QueryRow(ctx, query, id).Scan(&bot.ID, &bot.Token, &bot.BotName)
+	return bot, err
 }
