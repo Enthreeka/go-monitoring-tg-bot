@@ -87,7 +87,7 @@ func (u *userService) CreateUser(ctx context.Context, user *entity.User) error {
 	}
 
 	if !isExist {
-		u.log.Info("Get user: %s, with request: %s", user.String())
+		u.log.Info("Get user: %s", user.String())
 
 		err := u.userRepo.CreateUser(ctx, user)
 		if err != nil {

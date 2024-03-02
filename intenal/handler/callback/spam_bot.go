@@ -6,17 +6,22 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/balancer"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/spam"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 )
 
 type CallbackSpamBot struct {
-	SpamBot service.SpamBotService
-	Log     *logger.Logger
-	Store   *stateful.Store
+	NotificationService service.NotificationService
+	UserService         service.UserService
+	SpamBot             service.SpamBotService
+	SpammerStorage      *spam.SpammerBots
+	Log                 *logger.Logger
+	Store               *stateful.Store
 }
 
 const (
@@ -44,7 +49,7 @@ func (c *CallbackSpamBot) CallbackAddBotSpammer() tgbot.ViewFunc {
 		userID := update.FromChat().ID
 		messageId := update.CallbackQuery.Message.MessageID
 
-		_, err := c.SpamBot.GetAllBots(ctx, AddBot)
+		botsMarkup, err := c.SpamBot.GetAllBots(ctx, AddBot)
 		if err != nil {
 			c.Log.Error("SpamBot.GetAllBots: failed to get bots: %v", err)
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))
@@ -52,7 +57,7 @@ func (c *CallbackSpamBot) CallbackAddBotSpammer() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewEditMessageText(userID, messageId, handler.SpamBotAdd)
-		//msg.ReplyMarkup = botsMarkup
+		msg.ReplyMarkup = botsMarkup
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msgSend, err := bot.Send(msg)
@@ -127,6 +132,34 @@ func (c *CallbackSpamBot) CallbackShowAllBotSpammer() tgbot.ViewFunc {
 			c.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
+
+		return nil
+	}
+}
+
+func (c *CallbackSpamBot) CallbackActivateSpamAttack() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		notification, err := c.NotificationService.GetByChannelTelegramID(ctx, -1002071264074) // todo
+		if err != nil {
+			c.Log.Error("NotificationService.GetByChannelTelegramID: failed to get notification: %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+		if notification == nil {
+			c.Log.Error("notification == nil: %v", boterror.ErrNil)
+			handler.HandleError(bot, update, boterror.ParseErrToText(boterror.ErrNil))
+			return nil
+		}
+
+		users, err := c.UserService.GetAllUsers(ctx)
+		if users == nil || len(users) == 0 {
+			c.Log.Error("users == nil || len(users) == 0 : %v", boterror.ErrNil)
+			handler.HandleError(bot, update, boterror.ParseErrToText(boterror.ErrNil))
+			return nil
+		}
+
+		botBalancer := balancer.NewBalancer(c.SpammerStorage, c.Log)
+		botBalancer.Prepare(ctx, notification, users)
 
 		return nil
 	}

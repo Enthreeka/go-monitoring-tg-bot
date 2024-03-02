@@ -8,4 +8,6 @@ var (
 	AddChannelButton = tgbotapi.NewInlineKeyboardButtonData("Добавить канал", "add_channel")
 
 	ComebackSetting = tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "comeback")
+
+	ComebackSpamBot = tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "bot_spam_settings")
 )

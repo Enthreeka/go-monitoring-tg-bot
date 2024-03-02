@@ -6,34 +6,34 @@ import (
 	"sync"
 )
 
-type spammerBots struct {
+//type SpamBot interface {
+//	InitializeBot(token string) (string, error)
+//	Read(botName string) (*tgbotapi.BotAPI, bool)
+//	Delete(botName string)
+//	Range(f func(key, value any) error) error
+//}
+
+type SpammerBots struct {
 	storageBot map[string]*tgbotapi.BotAPI
 
 	log *logger.Logger
 	mu  sync.RWMutex
 }
 
-type SpamBot interface {
-	InitializeBot(token string) (string, error)
-	Read(botName string) (*tgbotapi.BotAPI, bool)
-	Delete(botName string)
-	Range(f func(key, value any) error) error
-}
-
-func NewSpammerBot(log *logger.Logger) SpamBot {
-	return &spammerBots{
+func NewSpammerBot(log *logger.Logger) *SpammerBots {
+	return &SpammerBots{
 		storageBot: make(map[string]*tgbotapi.BotAPI, 20),
 		log:        log,
 	}
 }
 
-func (s *spammerBots) InitializeBot(token string) (string, error) {
+func (s *SpammerBots) InitializeBot(token string) (string, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		s.log.Error("failed to load token %v", err)
 	}
 
-	s.log.Info("Authorized on account %s", bot.Self.UserName)
+	s.log.Info("Initialize new account %s", bot.Self.UserName)
 
 	s.mu.Lock()
 	s.storageBot[bot.Self.UserName] = bot
@@ -42,7 +42,7 @@ func (s *spammerBots) InitializeBot(token string) (string, error) {
 	return bot.Self.UserName, nil
 }
 
-func (s *spammerBots) Read(botName string) (*tgbotapi.BotAPI, bool) {
+func (s *SpammerBots) Read(botName string) (*tgbotapi.BotAPI, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -54,13 +54,13 @@ func (s *spammerBots) Read(botName string) (*tgbotapi.BotAPI, bool) {
 	return d, true
 }
 
-func (s *spammerBots) Delete(botName string) {
+func (s *SpammerBots) Delete(botName string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.storageBot, botName)
 }
 
-func (s *spammerBots) Range(f func(key, value any) error) error {
+func (s *SpammerBots) Range(f func(key, value any) error) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

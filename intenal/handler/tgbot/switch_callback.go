@@ -278,6 +278,13 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
+	case strings.HasPrefix(callbackData, "activate_spam_bots"):
+		callbackView, ok := b.callbackView["activate_spam_bots"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
 	default:
 		return nil, nil
 	}

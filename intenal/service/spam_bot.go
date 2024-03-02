@@ -24,11 +24,11 @@ type SpamBotService interface {
 type spamBotService struct {
 	userRepo       postgres.UserRepo
 	spamBotRepo    postgres.SpamBotRepo
-	spammerStorage spam.SpamBot
+	spammerStorage *spam.SpammerBots
 	log            *logger.Logger
 }
 
-func NewSpamBotService(userRepo postgres.UserRepo, spamBotRepo postgres.SpamBotRepo, spammerStorage spam.SpamBot, log *logger.Logger) SpamBotService {
+func NewSpamBotService(userRepo postgres.UserRepo, spamBotRepo postgres.SpamBotRepo, spammerStorage *spam.SpammerBots, log *logger.Logger) SpamBotService {
 	return &spamBotService{
 		userRepo:       userRepo,
 		spamBotRepo:    spamBotRepo,
@@ -76,6 +76,9 @@ func (s *spamBotService) createBotMarkup(bot []entity.SpamBot, command string) (
 		}
 	}
 
+	if command == "get" {
+		rows = append(rows, []tgbotapi.InlineKeyboardButton{button.ComebackSpamBot})
+	}
 	rows = append(rows, []tgbotapi.InlineKeyboardButton{button.MainMenuButton})
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)

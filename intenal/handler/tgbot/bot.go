@@ -35,7 +35,7 @@ type Bot struct {
 	bot            *tgbotapi.BotAPI
 	log            *logger.Logger
 	store          *stateful.Store
-	spammerStorage spam.SpamBot
+	spammerStorage *spam.SpammerBots
 
 	cmdView      map[string]ViewFunc
 	callbackView map[string]ViewFunc
@@ -54,7 +54,7 @@ type Bot struct {
 func NewBot(bot *tgbotapi.BotAPI,
 	log *logger.Logger,
 	store *stateful.Store,
-	spammerStorage spam.SpamBot,
+	spammerStorage *spam.SpammerBots,
 	requestService service.RequestService,
 	userService service.UserService,
 	channelService service.ChannelService,

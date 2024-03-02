@@ -24,7 +24,7 @@ type Bot struct {
 	psql           *postgres.Postgres
 	excel          *excel.Excel
 	store          *stateful.Store
-	spammerStorage spam.SpamBot
+	spammerStorage *spam.SpammerBots
 
 	userService         service.UserService
 	requestService      service.RequestService
@@ -96,9 +96,12 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Store:               b.store,
 	}
 	b.spamBotCallbackHandler = callback.CallbackSpamBot{
-		SpamBot: b.spamBotService,
-		Store:   b.store,
-		Log:     log,
+		NotificationService: b.notificationService,
+		UserService:         b.userService,
+		SpammerStorage:      b.spammerStorage,
+		SpamBot:             b.spamBotService,
+		Store:               b.store,
+		Log:                 log,
 	}
 }
 
@@ -109,9 +112,9 @@ func (b *Bot) initExcel(log *logger.Logger) {
 func (b *Bot) initialize(ctx context.Context, log *logger.Logger) {
 	b.initStore()
 	b.initExcel(log)
+	b.initSpamBotConstructor(log)
 	b.initServices(b.psql, log)
 	b.initHandlers(log)
-	b.initSpamBotConstructor(log)
 	b.initSpamStorage(ctx)
 }
 
@@ -190,6 +193,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("add_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackAddBotSpammer()))
 	newBot.RegisterCommandCallback("delete_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackDeleteBotSpammer()))
 	newBot.RegisterCommandCallback("list_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackShowAllBotSpammer()))
+	newBot.RegisterCommandCallback("activate_spam_bots", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackActivateSpamAttack()))
 
 	if err := newBot.Run(ctx); err != nil {
 		log.Error("failed to run tgbot: %v", err)

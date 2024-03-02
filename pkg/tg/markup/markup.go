@@ -114,7 +114,7 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Список подключенных ботов", "list_spam_bot")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "bot_spam_settings")),
+			tgbotapi.NewInlineKeyboardButtonData("Сделать рассылку", "activate_spam_bots")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 
