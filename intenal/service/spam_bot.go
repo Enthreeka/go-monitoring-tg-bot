@@ -92,7 +92,7 @@ func (s *spamBotService) GetSpamBotsFromDBToCache(ctx context.Context) {
 		if errors.Is(err, boterror.ErrNoRows) {
 			return
 		}
-		s.log.Fatal("failed to get bots token from postgres")
+		s.log.Error("failed to get bots token from postgres")
 		return
 	}
 
