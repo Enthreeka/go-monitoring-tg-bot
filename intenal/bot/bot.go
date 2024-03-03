@@ -189,11 +189,11 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	newBot.RegisterCommandCallback("get_statistic", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackRequestStatisticForToday()))
 
-	newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackBotSpammerSetting()))
-	newBot.RegisterCommandCallback("add_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackAddBotSpammer()))
-	newBot.RegisterCommandCallback("delete_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackDeleteBotSpammer()))
-	newBot.RegisterCommandCallback("list_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackShowAllBotSpammer()))
-	newBot.RegisterCommandCallback("activate_spam_bots", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackActivateSpamAttack()))
+	//newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackBotSpammerSetting()))
+	//newBot.RegisterCommandCallback("add_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackAddBotSpammer()))
+	//newBot.RegisterCommandCallback("delete_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackDeleteBotSpammer()))
+	//newBot.RegisterCommandCallback("list_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackShowAllBotSpammer()))
+	//newBot.RegisterCommandCallback("activate_spam_bots", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackActivateSpamAttack()))
 
 	if err := newBot.Run(ctx); err != nil {
 		log.Error("failed to run tgbot: %v", err)

@@ -33,6 +33,10 @@ func (s *SpammerBots) InitializeBot(token string) (string, error) {
 		s.log.Error("failed to load token %v", err)
 	}
 
+	if bot == nil {
+		return "", err
+	}
+
 	s.log.Info("Initialize new account %s", bot.Self.UserName)
 
 	s.mu.Lock()

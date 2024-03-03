@@ -90,3 +90,5 @@ create table if not exists spam_bot(
     bot_name varchar(150) null,
     primary key (id)
 );
+
+delete from user_channel where user_id =1189315800;

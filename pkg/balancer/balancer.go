@@ -116,6 +116,6 @@ func (b *BotPool) Prepare(ctx context.Context, notification *entity.Notification
 	}
 	wg.Wait()
 
-	b.log.Info("Balancer is executed fot time: %v", time.Since(start))
+	b.log.Info("Balancer is executed fot time: %f", time.Since(start).Seconds())
 	b.log.Info("Count successfully sent messages: %d/%d", b.successCounter, len(users))
 }
