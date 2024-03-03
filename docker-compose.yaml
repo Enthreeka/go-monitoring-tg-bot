@@ -13,6 +13,7 @@ services:
     ports:
       - "5435:5432"
     volumes:
+      -  postgres_data:/var/lib/postgresql/data
       - ./migration:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_PASSWORD=postgres
@@ -25,3 +26,6 @@ services:
       timeout: 30s
       retries: 10
       start_period: 30s
+
+volumes:
+  postgres_data:
