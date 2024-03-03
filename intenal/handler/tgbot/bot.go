@@ -212,18 +212,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			return
 		}
 
-		b.log.Info("main bot")
 		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot); err != nil {
-			b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
-			return
-		}
-
-		b.log.Info("daun bot")
-		bot, err := tgbotapi.NewBotAPI("5996998889:AAHQ4xXCOfCXeLMHgRK86VREaGRHhYtt6b8")
-		if err != nil {
-
-		}
-		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, bot); err != nil {
 			b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
 			return
 		}

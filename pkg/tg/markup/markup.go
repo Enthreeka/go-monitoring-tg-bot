@@ -11,8 +11,8 @@ var (
 			tgbotapi.NewInlineKeyboardButtonData("Управление каналами️", "channel_setting")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Управление данными пользователей", "user_setting")),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Управление дополнительными ботами для рассылки", "bot_spam_settings")),
+		//tgbotapi.NewInlineKeyboardRow(
+		//	tgbotapi.NewInlineKeyboardButtonData("Управление дополнительными ботами для рассылки", "bot_spam_settings")),
 	)
 
 	InfoRequest = tgbotapi.NewInlineKeyboardMarkup(
