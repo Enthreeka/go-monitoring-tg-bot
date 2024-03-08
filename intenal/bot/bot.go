@@ -77,11 +77,12 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Log: log,
 	}
 	b.userCallbackHandler = callback.CallbackUser{
-		UserService:   b.userService,
-		SenderService: b.senderService,
-		Log:           log,
-		Excel:         b.excel,
-		Store:         b.store,
+		UserService:         b.userService,
+		SenderService:       b.senderService,
+		NotificationService: b.notificationService,
+		Log:                 log,
+		Excel:               b.excel,
+		Store:               b.store,
 	}
 	b.requestCallbackHandler = callback.CallbackRequest{
 		RequestService:      b.requestService,
@@ -112,10 +113,10 @@ func (b *Bot) initExcel(log *logger.Logger) {
 func (b *Bot) initialize(ctx context.Context, log *logger.Logger) {
 	b.initStore()
 	b.initExcel(log)
-	b.initSpamBotConstructor(log)
+	//b.initSpamBotConstructor(log)
 	b.initServices(b.psql, log)
 	b.initHandlers(log)
-	b.initSpamStorage(ctx)
+	//b.initSpamStorage(ctx)
 }
 
 func (b *Bot) initStore() {
@@ -188,6 +189,8 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("cancel_admin_setting", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackCancelAdminSetting()))
 
 	newBot.RegisterCommandCallback("get_statistic", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackRequestStatisticForToday()))
+
+	newBot.RegisterCommandCallback("all_db_sender", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackAllUserSender()))
 
 	//newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackBotSpammerSetting()))
 	//newBot.RegisterCommandCallback("add_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackAddBotSpammer()))

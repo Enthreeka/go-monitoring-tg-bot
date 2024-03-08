@@ -5,24 +5,28 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/excel"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
+	"strings"
 	"sync"
 )
 
 type CallbackUser struct {
-	UserService   service.UserService
-	SenderService service.SenderService
-	Log           *logger.Logger
-	Excel         *excel.Excel
-	Store         *stateful.Store
+	UserService         service.UserService
+	SenderService       service.SenderService
+	NotificationService service.NotificationService
+	Log                 *logger.Logger
+	Excel               *excel.Excel
+	Store               *stateful.Store
 
 	mu sync.Mutex
 }
@@ -367,6 +371,56 @@ func (c *CallbackUser) CallbackCancelAdminSetting() tgbot.ViewFunc {
 			c.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
+		return nil
+	}
+}
+
+func (c *CallbackUser) CallbackAllUserSender() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		notification, err := c.NotificationService.GetByChannelTelegramID(ctx, -1002071264074) // todo
+		if err != nil {
+			c.Log.Error("NotificationService.GetByChannelTelegramID: failed to get notification: %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+		if notification == nil {
+			c.Log.Error("notification == nil: %v", boterror.ErrNil)
+			handler.HandleError(bot, update, boterror.ParseErrToText(boterror.ErrNil))
+			return nil
+		}
+
+		users, err := c.UserService.GetAllUsers(ctx)
+		if users == nil || len(users) == 0 {
+			c.Log.Error("users == nil || len(users) == 0 : %v", boterror.ErrNil)
+			handler.HandleError(bot, update, boterror.ParseErrToText(boterror.ErrNil))
+			return nil
+		}
+
+		go func(log *logger.Logger, notification *entity.Notification, bot *tgbotapi.BotAPI, users []entity.User) {
+			sender := tg.NewSender(log, notification, bot)
+
+			for _, user := range users {
+				if user.BlockedBot == false {
+					if err := sender.SendMsgToNewUser(user.ID); err != nil {
+
+						if strings.Contains(err.Error(), "Forbidden: bot was blocked by the user") {
+
+							if err := c.UserService.UpdateBlockedBotStatus(context.Background(), user.ID, true); err != nil {
+								log.Error("userService.UpdateBlockedBotStatus: %v", err)
+								return
+							}
+
+						} else {
+							log.Error("error on sending: %v", err)
+						}
+					}
+				}
+			}
+
+			successCounter := sender.GetSuccessCounter()
+			log.Info("success counter: %d", successCounter)
+		}(c.Log, notification, bot, users)
+
 		return nil
 	}
 }

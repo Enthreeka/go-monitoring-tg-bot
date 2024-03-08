@@ -12,6 +12,7 @@ type User struct {
 	ChannelFrom *string   `json:"channel_from,omitempty"`
 	CreatedAt   time.Time `json:"created_at,omitempty"`
 	Role        string    `json:"user_role"`
+	BlockedBot  bool      `json:"blocked_bot"`
 
 	ChannelTelegramID int64 `json:"channel_telegram_id,omitempty"`
 }

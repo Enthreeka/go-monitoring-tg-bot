@@ -91,4 +91,5 @@ create table if not exists spam_bot(
     primary key (id)
 );
 
-delete from user_channel where user_id =1189315800;
+alter table "user"
+    add blocked_bot bool default false;

@@ -18,6 +18,9 @@ type UserRepo interface {
 	IsUserExistByUsernameTg(ctx context.Context, usernameTg string) (bool, error)
 	GetAllAdmin(ctx context.Context) ([]entity.User, error)
 	IsUserExistByUserID(ctx context.Context, userID int64) (bool, error)
+	UpdateBlockedBotStatus(ctx context.Context, userID int64, status bool) error
+	GetCountBlockedBot(ctx context.Context) (int, error)
+	GetCountBlockedBotByChannelID(ctx context.Context, channelTelegramID int64) (int, error)
 	UserChannelRepo
 }
 
@@ -39,7 +42,7 @@ func NewUserRepo(pg *postgres.Postgres) UserRepo {
 
 func (u *userRepo) collectRow(row pgx.Row) (*entity.User, error) {
 	var user entity.User
-	err := row.Scan(&user.ID, &user.UsernameTg, &user.CreatedAt, &user.Phone, &user.ChannelFrom, &user.Role)
+	err := row.Scan(&user.ID, &user.UsernameTg, &user.CreatedAt, &user.Phone, &user.ChannelFrom, &user.Role, &user.BlockedBot)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return nil, checkErr
 	}
@@ -184,6 +187,40 @@ func (u *userRepo) GetCountUserByChannelTgID(ctx context.Context, channelID int6
 	var count int
 
 	err := u.Pool.QueryRow(ctx, query, channelID).Scan(&count)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return count, checkErr
+	}
+
+	return count, err
+}
+
+func (u *userRepo) UpdateBlockedBotStatus(ctx context.Context, userID int64, status bool) error {
+	query := `update "user" set blocked_bot = $1 where id = $2`
+
+	_, err := u.Pool.Exec(ctx, query, status, userID)
+	return err
+}
+
+func (u *userRepo) GetCountBlockedBot(ctx context.Context) (int, error) {
+	query := `select count(*) from "user" where blocked_bot = true`
+	var count int
+
+	err := u.Pool.QueryRow(ctx, query).Scan(&count)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return count, checkErr
+	}
+
+	return count, err
+
+}
+func (u *userRepo) GetCountBlockedBotByChannelID(ctx context.Context, channelTelegramID int64) (int, error) {
+	query := `select count(*) from "user" u
+    join public.user_channel uc on u.id = uc.user_id
+    where u.blocked_bot = true and uc.channel_tg_id = $1`
+
+	var count int
+
+	err := u.Pool.QueryRow(ctx, query, channelTelegramID).Scan(&count)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return count, checkErr
 	}

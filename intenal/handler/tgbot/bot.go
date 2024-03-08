@@ -231,6 +231,13 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			}
 		}
 
+		if update.MyChatMember.NewChatMember.WasKicked() {
+			if err := b.userService.UpdateBlockedBotStatus(ctx, update.MyChatMember.From.ID, true); err != nil {
+				b.log.Error("userService.UpdateBlockedBotStatus: %v", err)
+				return
+			}
+		}
+
 	}
 }
 
