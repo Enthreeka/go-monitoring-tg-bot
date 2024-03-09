@@ -35,7 +35,6 @@ const (
 	UserSetAdmin      = "Отправьте никнейм пользователя, которого хотите назначить администратором"
 	UserSetSuperAdmin = "Отправьте никнейм пользователя, которого хотите назначить супер администратором"
 	UserDeleteAdmin   = "Отправьте никнейм пользователя, у которого хотите забрать админские права"
-	UserAdminCancel   = "Команда отменена"
 )
 
 func UserExcelFileText() string {
@@ -49,9 +48,7 @@ func UserSenderSetting(channel string) string {
 }
 
 const (
-	RequestApproved = `Все заявки статуса "in progress" были приняты`
-	RequestDecline  = `Все заявки статуса "in progress" были отклонены`
-	RequestEmpty    = `Запросы отсутствуют`
+	RequestEmpty = `Запросы отсутствуют`
 )
 
 func RequestDeclineText(countRejected int) string {
@@ -82,23 +79,26 @@ func NotificationSettingText(channel string) string {
 		"Кнопка `<u>Отправить пример рассылки</u>` отправит вам сообщение такого же вида, как это будут видеть новые пользователи", channel)
 }
 
+func NotificationGlobalSendingStat(value int64) string {
+	return fmt.Sprintf("Рассылка по всей базе завершена, число успешно отправленных сообщений: %d", value)
+}
+
 const (
 	NotificationUpdateText   = `Отправьте сообщение, которое будет отправляться новым пользователям`
 	NotificationUpdateFile   = "Отправьте файл/фотографию, который будет отправляться новым пользователям\n\nЕсли отправляете фотографию, то поставьте галочку для сжатия изображения"
 	NotificationUpdateButton = "Отправьте сообщение и ссылку для создания кнопки, которая будет отправляться новым пользователям. \n" +
 		"Пример сообщения: на чем написан бот?|https://go.dev/"
-	NotificationCancel       = "Команда была отменена"
 	NotificationEmpty        = "Рассылка отсутствует"
 	NotificationDeleteText   = "Текст успешно удален"
 	NotificationDeleteButton = "Кнопка успешно удалена"
 	NotificationDeleteFile   = "Документ/фотография успешно удалена"
-	NotificationExampleError = "С кнопкой обязательно должно быть сообщение/файл"
-)
 
-func SpammerSettingText(channel string) string {
-	return fmt.Sprintf("<strong>Управление дополнительными ботами для рассылки</strong>\n"+
-		"Канал:<i>%s</i> \n\n", channel)
-}
+	NotificationGlobalSetting      = "<strong>Управление рассылкой для всех пользователей</strong>\n"
+	NotificationGlobalUpdateText   = `Отправьте сообщение, которое отправится пользователям`
+	NotificationGlobalUpdateFile   = "Отправьте файл/фотографию, которое отправится пользователям\n\nЕсли отправляете фотографию, то поставьте галочку для сжатия изображения"
+	NotificationGlobalUpdateButton = "Отправьте сообщение и ссылку для создания кнопки, которое отправится пользователям. \n" +
+		"Пример сообщения: на чем написан бот?|https://go.dev/"
+)
 
 const (
 	SpamBotAdd    = `Отправьте токен бота`

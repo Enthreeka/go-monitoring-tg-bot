@@ -37,6 +37,8 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Рассылка по всей базе", "all_db_sender")),
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Настройка рассылки по всей базе", "global_setting_notification")),
+		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Скачать Excel файл с пользователя", "download_excel")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Управление ролями(ограниченный доступ)", "role_setting")),
@@ -56,6 +58,23 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "example_notification")),
 		tgbotapi.NewInlineKeyboardRow(button.ComebackSetting),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	GlobalHelloMessageSetting = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить сообщение", "global_add_text_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить сообщение", "global_delete_text_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить фотографию", "global_add_photo_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить фотографию", "global_delete_photo_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить кнопку", "global_add_button_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить кнопку", "global_delete_button_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "global_example_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "user_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 

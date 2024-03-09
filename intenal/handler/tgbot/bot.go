@@ -167,15 +167,15 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
 
 		// check if exist some state, with user callback
-		isExist, err := b.getStateCallback(ctx, update)
-		if isExist {
-			if err != nil {
-				b.log.Error("failed to work with state: %v", err)
-				handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
-				return
-			}
-			return
-		}
+		//isExist, err := b.getStateCallback(ctx, update)
+		//if isExist {
+		//	if err != nil {
+		//		b.log.Error("failed to work with state: %v", err)
+		//		handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
+		//		return
+		//	}
+		//	return
+		//}
 
 		var callback ViewFunc
 

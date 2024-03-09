@@ -294,8 +294,17 @@ func isUrl(str string) bool {
 }
 
 func (b *Bot) sendHelloSetting(userID int64, channelName string) error {
-	msg := tgbotapi.NewMessage(userID, handler.NotificationSettingText(channelName))
-	msg.ReplyMarkup = &markup.HelloMessageSetting
+	var (
+		msg tgbotapi.MessageConfig
+	)
+
+	if channelName != "" {
+		msg = tgbotapi.NewMessage(userID, handler.NotificationSettingText(channelName))
+		msg.ReplyMarkup = &markup.HelloMessageSetting
+	} else {
+		msg = tgbotapi.NewMessage(userID, handler.NotificationGlobalSetting)
+		msg.ReplyMarkup = &markup.GlobalHelloMessageSetting
+	}
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	if _, err := b.bot.Send(msg); err != nil {

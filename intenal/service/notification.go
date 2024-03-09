@@ -34,26 +34,40 @@ func NewNotificationService(notificationRepo postgres.NotificationRepo, channelR
 func (n *notificationService) createNotificationIfNotExist(ctx context.Context, notification *entity.Notification) (int64, error) {
 	n.log.Info("Get notification: %s", notification.String())
 
-	channelID, err := n.channelRepo.GetChannelIDByChannelName(ctx, notification.ChannelName)
-	if err != nil {
-		n.log.Error("channelRepo.GetChannelIDByChannelName: failed to get channel id: %v", err)
-		return 0, err
+	var (
+		channelID int64 = 0
+		err       error
+	)
+	if notification.ChannelName != "" {
+		channelID, err = n.channelRepo.GetChannelIDByChannelName(ctx, notification.ChannelName)
+		if err != nil {
+			n.log.Error("channelRepo.GetChannelIDByChannelName: failed to get channel id: %v", err)
+			return -1, err
+		}
 	}
 
 	isExist, err := n.notificationRepo.IsExistNotificationByChannelID(ctx, channelID)
 	if err != nil {
 		n.log.Error("notificationRepo.IsExistNotificationByChannelID: failed to check notification: %v", err)
-		return 0, err
+		return -1, err
 	}
 
 	if !isExist {
 		notification.ChannelID = channelID
+
+		if channelID == 0 {
+			if err := n.channelRepo.Create(ctx, &entity.Channel{TelegramID: 0, ChannelName: "", Status: "administrator", ChannelURL: nil}); err != nil {
+				n.log.Error("channelRepo.Create: failed to create channel for global notification: %v", err)
+				return -1, err
+			}
+		}
+
 		err := n.notificationRepo.Create(ctx, notification)
 		if err != nil {
 			n.log.Error("notificationRepo.Create: failed to create notification: %v", err)
-			return 0, err
+			return -1, err
 		}
-		return 0, nil
+		return -1, nil
 	}
 	return channelID, nil
 }
@@ -67,10 +81,17 @@ func (n *notificationService) GetAll(ctx context.Context) ([]entity.Notification
 }
 
 func (n *notificationService) GetByChannelName(ctx context.Context, channelName string) (*entity.Notification, error) {
-	channelID, err := n.channelRepo.GetChannelIDByChannelName(ctx, channelName)
-	if err != nil {
-		n.log.Error("channelRepo.GetChannelIDByChannelName: failed to get channel id: %v", err)
-		return nil, err
+	var (
+		channelID int64 = 0
+		err       error
+	)
+
+	if channelName != "" {
+		channelID, err = n.channelRepo.GetChannelIDByChannelName(ctx, channelName)
+		if err != nil {
+			n.log.Error("channelRepo.GetChannelIDByChannelName: failed to get channel id: %v", err)
+			return nil, err
+		}
 	}
 
 	notification, err := n.notificationRepo.GetByChannelID(ctx, channelID)
@@ -87,8 +108,10 @@ func (n *notificationService) UpdateTextNotification(ctx context.Context, notifi
 		return err
 	}
 
-	if channelID == 0 && err == nil {
-		return nil
+	if notification.ChannelName != "" {
+		if channelID == 0 && err == nil {
+			return nil
+		}
 	}
 
 	return n.notificationRepo.UpdateTextByChannelID(ctx, notification.NotificationText, channelID)
@@ -101,8 +124,10 @@ func (n *notificationService) UpdateFileNotification(ctx context.Context, notifi
 		return err
 	}
 
-	if channelID == 0 && err == nil {
-		return nil
+	if notification.ChannelName != "" {
+		if channelID == 0 && err == nil {
+			return nil
+		}
 	}
 
 	err = n.notificationRepo.UpdateFileByChannelID(ctx, notification.FileID, notification.FileType, channelID)
@@ -120,8 +145,10 @@ func (n *notificationService) UpdateButtonNotification(ctx context.Context, noti
 		return err
 	}
 
-	if channelID == 0 && err == nil {
-		return nil
+	if notification.ChannelName != "" {
+		if channelID == 0 && err == nil {
+			return nil
+		}
 	}
 
 	err = n.notificationRepo.UpdateButtonByChannelID(ctx, notification.ButtonURL, notification.ButtonText, channelID)

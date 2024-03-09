@@ -9,6 +9,8 @@ var (
 	ErrNotFound = errors.New("not found in map")
 )
 
+var data = []string{"channel_setting", "main_menu", "user_setting", "download_excel"}
+
 func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 	switch {
 
@@ -236,27 +238,6 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 		}
 		return nil, callbackView
 
-	case strings.HasPrefix(callbackData, "bot_get_"):
-		callbackView, ok := b.callbackView["get_statistic"] // todo
-		if !ok {
-			return ErrNotFound, nil
-		}
-		return nil, callbackView
-
-	case strings.HasPrefix(callbackData, "bot_delete_"):
-		callbackView, ok := b.callbackView["get_statistic"] // todo
-		if !ok {
-			return ErrNotFound, nil
-		}
-		return nil, callbackView
-
-	case strings.HasPrefix(callbackData, "bot_add_"):
-		callbackView, ok := b.callbackView["get_statistic"] // todo
-		if !ok {
-			return ErrNotFound, nil
-		}
-		return nil, callbackView
-
 	case strings.HasPrefix(callbackData, "add_spam_bot"):
 		callbackView, ok := b.callbackView["add_spam_bot"]
 		if !ok {
@@ -287,6 +268,62 @@ func (b *Bot) CallbackStrings(callbackData string) (error, ViewFunc) {
 
 	case strings.HasPrefix(callbackData, "all_db_sender"):
 		callbackView, ok := b.callbackView["all_db_sender"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_setting_notification"):
+		callbackView, ok := b.callbackView["global_setting_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_add_text_notification"):
+		callbackView, ok := b.callbackView["global_add_text_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_delete_text_notification"):
+		callbackView, ok := b.callbackView["global_delete_text_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_add_photo_notification"):
+		callbackView, ok := b.callbackView["global_add_photo_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_delete_photo_notification"):
+		callbackView, ok := b.callbackView["global_delete_photo_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_add_button_notification"):
+		callbackView, ok := b.callbackView["global_add_button_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_delete_button_notification"):
+		callbackView, ok := b.callbackView["global_delete_button_notification"]
+		if !ok {
+			return ErrNotFound, nil
+		}
+		return nil, callbackView
+
+	case strings.HasPrefix(callbackData, "global_example_notification"):
+		callbackView, ok := b.callbackView["global_example_notification"]
 		if !ok {
 			return ErrNotFound, nil
 		}

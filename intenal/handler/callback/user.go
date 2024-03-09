@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 	"strings"
 	"sync"
+	"time"
 )
 
 type CallbackUser struct {
@@ -377,7 +378,8 @@ func (c *CallbackUser) CallbackCancelAdminSetting() tgbot.ViewFunc {
 
 func (c *CallbackUser) CallbackAllUserSender() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
-		notification, err := c.NotificationService.GetByChannelTelegramID(ctx, -1002071264074) // todo
+		// 0 - telegram id for global notification
+		notification, err := c.NotificationService.GetByChannelTelegramID(ctx, 0)
 		if err != nil {
 			c.Log.Error("NotificationService.GetByChannelTelegramID: failed to get notification: %v", err)
 			handler.HandleError(bot, update, boterror.ParseErrToText(err))
@@ -389,6 +391,13 @@ func (c *CallbackUser) CallbackAllUserSender() tgbot.ViewFunc {
 			return nil
 		}
 
+		empty := notification.IsEmpty()
+		if empty {
+			c.Log.Error("%v", boterror.ErrNotificationEmpty)
+			handler.HandleError(bot, update, boterror.ParseErrToText(boterror.ErrNotificationEmpty))
+			return nil
+		}
+
 		users, err := c.UserService.GetAllUsers(ctx)
 		if users == nil || len(users) == 0 {
 			c.Log.Error("users == nil || len(users) == 0 : %v", boterror.ErrNil)
@@ -396,9 +405,10 @@ func (c *CallbackUser) CallbackAllUserSender() tgbot.ViewFunc {
 			return nil
 		}
 
-		go func(log *logger.Logger, notification *entity.Notification, bot *tgbotapi.BotAPI, users []entity.User) {
+		go func(userID int64, log *logger.Logger, notification *entity.Notification, bot *tgbotapi.BotAPI, users []entity.User) {
 			sender := tg.NewSender(log, notification, bot)
 
+			start := time.Now()
 			for _, user := range users {
 				if user.BlockedBot == false {
 					if err := sender.SendMsgToNewUser(user.ID); err != nil {
@@ -407,7 +417,6 @@ func (c *CallbackUser) CallbackAllUserSender() tgbot.ViewFunc {
 
 							if err := c.UserService.UpdateBlockedBotStatus(context.Background(), user.ID, true); err != nil {
 								log.Error("userService.UpdateBlockedBotStatus: %v", err)
-								return
 							}
 
 						} else {
@@ -416,10 +425,17 @@ func (c *CallbackUser) CallbackAllUserSender() tgbot.ViewFunc {
 					}
 				}
 			}
+			end := time.Since(start)
 
 			successCounter := sender.GetSuccessCounter()
 			log.Info("success counter: %d", successCounter)
-		}(c.Log, notification, bot, users)
+			log.Info("the mailing lasted seconds: %f", end.Seconds())
+
+			if _, err := bot.Send(tgbotapi.NewMessage(userID, handler.NotificationGlobalSendingStat(successCounter))); err != nil {
+				c.Log.Error("failed to send message", zap.Error(err))
+				return
+			}
+		}(update.FromChat().ID, c.Log, notification, bot, users)
 
 		return nil
 	}

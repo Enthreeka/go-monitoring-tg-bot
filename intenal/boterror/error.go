@@ -16,6 +16,7 @@ var (
 	ErrUniqueViolation     = NewError("Violation must be unique", errors.New("non_unique_value"))
 	ErrForeignKeyViolation = NewError("Foreign Key Violation", errors.New("foreign_key_violation "))
 	ErrNoRows              = NewError("No rows in result set", errors.New("no_rows"))
+	ErrNotificationEmpty   = NewError("Notification is empty", errors.New("empty_notification"))
 )
 
 var (
@@ -49,6 +50,8 @@ func ParseErrToText(err error) string {
 		return "Пользователь с таким никнеймом не был найден"
 	case errors.Is(err, ErrDeleteSuperAdmin):
 		return "Нельзя забирать права супер админа через бота, необходимо изменять через базу данных"
+	case errors.Is(err, ErrNotificationEmpty):
+		return "Отсутствуют обязательные поля для рассылки (файл/текст)"
 
 	}
 

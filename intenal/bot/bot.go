@@ -192,11 +192,14 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	newBot.RegisterCommandCallback("all_db_sender", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackAllUserSender()))
 
-	//newBot.RegisterCommandCallback("bot_spam_settings", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackBotSpammerSetting()))
-	//newBot.RegisterCommandCallback("add_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackAddBotSpammer()))
-	//newBot.RegisterCommandCallback("delete_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackDeleteBotSpammer()))
-	//newBot.RegisterCommandCallback("list_spam_bot", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackShowAllBotSpammer()))
-	//newBot.RegisterCommandCallback("activate_spam_bots", middleware.AdminMiddleware(b.userService, b.spamBotCallbackHandler.CallbackActivateSpamAttack()))
+	newBot.RegisterCommandCallback("global_setting_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGetSettingGlobalNotification()))
+	newBot.RegisterCommandCallback("global_add_text_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalUpdateTextNotification()))
+	newBot.RegisterCommandCallback("global_example_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGetGlobalExampleNotification()))
+	newBot.RegisterCommandCallback("global_add_photo_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalUpdateFileNotification()))
+	newBot.RegisterCommandCallback("global_add_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalUpdateButtonNotification()))
+	newBot.RegisterCommandCallback("global_delete_photo_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteFileNotification()))
+	newBot.RegisterCommandCallback("global_delete_text_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteTextNotification()))
+	newBot.RegisterCommandCallback("global_delete_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteButtonNotification()))
 
 	if err := newBot.Run(ctx); err != nil {
 		log.Error("failed to run tgbot: %v", err)

@@ -96,14 +96,16 @@ func (c *channelService) createChannelMarkup(channel []entity.Channel, command s
 	buttonsPerRow := 1
 
 	for i, el := range channel {
-		btn := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s", el.ChannelName),
-			fmt.Sprintf("channel_%s_%d", command, el.ID))
+		if el.TelegramID != 0 { // check for channel for global notification
+			btn := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s", el.ChannelName),
+				fmt.Sprintf("channel_%s_%d", command, el.ID))
 
-		row = append(row, btn)
+			row = append(row, btn)
 
-		if (i+1)%buttonsPerRow == 0 || i == len(channel)-1 {
-			rows = append(rows, row)
-			row = []tgbotapi.InlineKeyboardButton{}
+			if (i+1)%buttonsPerRow == 0 || i == len(channel)-1 {
+				rows = append(rows, row)
+				row = []tgbotapi.InlineKeyboardButton{}
+			}
 		}
 	}
 
