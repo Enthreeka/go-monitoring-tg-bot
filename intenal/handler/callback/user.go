@@ -413,7 +413,7 @@ func (c *CallbackUser) CallbackAllUserSender() tgbot.ViewFunc {
 				if user.BlockedBot == false {
 					if err := sender.SendMsgToNewUser(user.ID); err != nil {
 
-						if strings.Contains(err.Error(), "Forbidden: bot was blocked by the user") {
+						if strings.Contains(err.Error(), "Forbidden: bot was blocked by the user") || strings.Contains(err.Error(), "Bad Request: chat not found") {
 
 							if err := c.UserService.UpdateBlockedBotStatus(context.Background(), user.ID, true); err != nil {
 								log.Error("userService.UpdateBlockedBotStatus: %v", err)
