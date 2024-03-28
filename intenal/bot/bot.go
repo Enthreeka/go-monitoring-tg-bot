@@ -13,6 +13,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/postgres"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/spam"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"os"
 	"os/signal"
@@ -20,15 +21,17 @@ import (
 )
 
 type Bot struct {
-	psql  *postgres.Postgres
-	excel *excel.Excel
-	store *stateful.Store
+	psql           *postgres.Postgres
+	excel          *excel.Excel
+	store          *stateful.Store
+	spammerStorage *spam.SpammerBots
 
 	userService         service.UserService
 	requestService      service.RequestService
 	notificationService service.NotificationService
 	channelService      service.ChannelService
 	senderService       service.SenderService
+	spamBotService      service.SpamBotService
 
 	generalViewHandler view.ViewGeneral
 
@@ -37,6 +40,7 @@ type Bot struct {
 	userCallbackHandler         callback.CallbackUser
 	requestCallbackHandler      callback.CallbackRequest
 	notificationCallbackHandler callback.CallbackNotification
+	spamBotCallbackHandler      callback.CallbackSpamBot
 }
 
 func NewBot() *Bot {
@@ -49,12 +53,14 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	notificationRepo := pgRepo.NewNotificationRepo(psql)
 	channelRepo := pgRepo.NewChannelRepo(psql)
 	senderRepo := pgRepo.NewSenderRepo(psql)
+	spamBotRepo := pgRepo.NewSpamBotRepo(psql)
 
 	b.userService = service.NewUserService(userRepo, requestRepo, channelRepo, log)
 	b.requestService = service.NewRequestService(requestRepo, log)
 	b.notificationService = service.NewNotificationService(notificationRepo, channelRepo, log)
 	b.channelService = service.NewChannelService(channelRepo, log)
 	b.senderService = service.NewSenderService(senderRepo, channelRepo)
+	b.spamBotService = service.NewSpamBotService(userRepo, spamBotRepo, b.spammerStorage, log)
 }
 
 func (b *Bot) initHandlers(log *logger.Logger) {
@@ -64,27 +70,39 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 	b.channelCallbackHandler = callback.CallbackChannel{
 		ChannelService: b.channelService,
 		RequestService: b.requestService,
+		UserService:    b.userService,
 		Log:            log,
 	}
 	b.generalCallbackHandler = callback.CallbackGeneral{
 		Log: log,
 	}
 	b.userCallbackHandler = callback.CallbackUser{
-		UserService:   b.userService,
-		SenderService: b.senderService,
-		Log:           log,
-		Excel:         b.excel,
-		Store:         b.store,
+		UserService:         b.userService,
+		SenderService:       b.senderService,
+		NotificationService: b.notificationService,
+		Log:                 log,
+		Excel:               b.excel,
+		Store:               b.store,
 	}
 	b.requestCallbackHandler = callback.CallbackRequest{
 		RequestService:      b.requestService,
 		NotificationService: b.notificationService,
+		ChannelService:      b.channelService,
 		Log:                 log,
+		Store:               b.store,
 	}
 	b.notificationCallbackHandler = callback.CallbackNotification{
 		NotificationService: b.notificationService,
 		Log:                 log,
 		Store:               b.store,
+	}
+	b.spamBotCallbackHandler = callback.CallbackSpamBot{
+		NotificationService: b.notificationService,
+		UserService:         b.userService,
+		SpammerStorage:      b.spammerStorage,
+		SpamBot:             b.spamBotService,
+		Store:               b.store,
+		Log:                 log,
 	}
 }
 
@@ -92,15 +110,25 @@ func (b *Bot) initExcel(log *logger.Logger) {
 	b.excel = excel.NewExcel(log)
 }
 
-func (b *Bot) initialize(log *logger.Logger) {
+func (b *Bot) initialize(ctx context.Context, log *logger.Logger) {
 	b.initStore()
 	b.initExcel(log)
+	//b.initSpamBotConstructor(log)
 	b.initServices(b.psql, log)
 	b.initHandlers(log)
+	//b.initSpamStorage(ctx)
 }
 
 func (b *Bot) initStore() {
 	b.store = stateful.NewStore()
+}
+
+func (b *Bot) initSpamBotConstructor(log *logger.Logger) {
+	b.spammerStorage = spam.NewSpammerBot(log)
+}
+
+func (b *Bot) initSpamStorage(ctx context.Context) {
+	b.spamBotService.GetSpamBotsFromDBToCache(ctx)
 }
 
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
@@ -119,9 +147,12 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	defer psql.Close()
 	b.psql = psql
 
-	b.initialize(log)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
-	newBot := tgbot.NewBot(bot, log, b.store, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService)
+	b.initialize(ctx, log)
+
+	newBot := tgbot.NewBot(bot, log, b.store, b.spammerStorage, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService, b.spamBotService)
 
 	newBot.RegisterCommandView("start", middleware.AdminMiddleware(b.userService, b.generalViewHandler.ViewStart()))
 
@@ -157,8 +188,18 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("all_admin", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackGetAllAdmin()))
 	newBot.RegisterCommandCallback("cancel_admin_setting", middleware.SuperAdminMiddleware(b.userService, b.userCallbackHandler.CallbackCancelAdminSetting()))
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
+	newBot.RegisterCommandCallback("get_statistic", middleware.AdminMiddleware(b.userService, b.requestCallbackHandler.CallbackRequestStatisticForToday()))
+
+	newBot.RegisterCommandCallback("all_db_sender", middleware.AdminMiddleware(b.userService, b.userCallbackHandler.CallbackAllUserSender()))
+
+	newBot.RegisterCommandCallback("global_setting_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGetSettingGlobalNotification()))
+	newBot.RegisterCommandCallback("global_add_text_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalUpdateTextNotification()))
+	newBot.RegisterCommandCallback("global_example_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGetGlobalExampleNotification()))
+	newBot.RegisterCommandCallback("global_add_photo_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalUpdateFileNotification()))
+	newBot.RegisterCommandCallback("global_add_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalUpdateButtonNotification()))
+	newBot.RegisterCommandCallback("global_delete_photo_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteFileNotification()))
+	newBot.RegisterCommandCallback("global_delete_text_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteTextNotification()))
+	newBot.RegisterCommandCallback("global_delete_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteButtonNotification()))
 
 	if err := newBot.Run(ctx); err != nil {
 		log.Error("failed to run tgbot: %v", err)

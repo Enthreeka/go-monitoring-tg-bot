@@ -29,8 +29,8 @@ func (b *Bot) isStateExist(userID int64) (*stateful.StoreData, bool) {
 	return data, exist
 }
 
-func (b *Bot) getState(ctx context.Context, update *tgbotapi.Message) (bool, error) {
-	storeData, isExist := b.isStateExist(update.From.ID)
+func (b *Bot) getState(ctx context.Context, update *tgbotapi.Update) (bool, error) {
+	storeData, isExist := b.isStateExist(update.Message.From.ID)
 	if isExist {
 
 		typeData := getStoreData(storeData)
@@ -41,30 +41,99 @@ func (b *Bot) getState(ctx context.Context, update *tgbotapi.Message) (bool, err
 
 		switch typeData.(type) {
 		case *stateful.Notification:
-			if err := b.storeDataNotificationOperationType(ctx, storeData, update); err != nil {
+			if err := b.storeDataNotificationOperationType(ctx, storeData, update.Message); err != nil {
 				b.log.Error("storeDataNotificationOperationType: %v", err)
 				return true, err
 			}
 			return true, nil
 
 		case *stateful.Sender:
-			if err := b.createSenderMessage(ctx, storeData, update); err != nil {
+			if err := b.createSenderMessage(ctx, storeData, update.Message); err != nil {
 				b.log.Error("createSenderMessage: %v", err)
 				return true, err
 			}
 			return true, nil
 
 		case *stateful.Admin:
-			if err := b.storeDataUserOperationType(ctx, storeData, update); err != nil {
+			if err := b.storeDataUserOperationType(ctx, storeData, update.Message); err != nil {
 				b.log.Error("storeDataUserOperationType: %v", err)
 				return true, err
 			}
+			return true, nil
+
+		case *stateful.SpamBot:
+			if err := b.storeDataSpamBotOperationType(ctx, storeData, update); err != nil {
+				b.log.Error("storeDataSpamBotOperationType: %v", err)
+				return true, err
+			}
+
 			return true, nil
 		}
 
 		return true, nil
 	}
 	return false, nil
+}
+
+func (b *Bot) storeDataSpamBotOperationType(ctx context.Context, storeData *stateful.StoreData, update *tgbotapi.Update) error {
+	switch storeData.SpamBot.OperationType {
+	case stateful.OperationDeleteBot:
+		if update.CallbackQuery != nil {
+			userID := update.CallbackQuery.From.ID
+
+			botID := entity.GetID(update.CallbackData())
+
+			bot, err := b.spamBotService.GetByID(ctx, botID)
+			if err != nil {
+				b.log.Error("spamBotService.GetByID: %v", err)
+				return err
+			}
+
+			defer func() {
+				b.store.Delete(userID)
+				b.spammerStorage.Delete(bot.BotName)
+			}()
+
+			err = b.spamBotService.Delete(ctx, botID)
+			if err != nil {
+				b.log.Error("spamBotService.Delete: %v", err)
+				return err
+			}
+
+			if _, err := b.bot.Send(tgbotapi.NewMessage(userID, "Удален успешно")); err != nil {
+				b.log.Error("failed to send message", zap.Error(err))
+				return err
+			}
+		}
+		return nil
+	case stateful.OperationAddBot:
+		userID := update.Message.From.ID
+
+		defer b.store.Delete(userID)
+
+		botName, err := b.spammerStorage.InitializeBot(update.Message.Text)
+		if err != nil {
+			b.log.Error("spammerStorage.InitializeBot: %v", err)
+			return err
+		}
+
+		if err = b.spamBotService.Create(ctx, &entity.SpamBot{
+			Token:   update.Message.Text,
+			BotName: botName,
+		}); err != nil {
+			b.log.Error("spamBotService.Create: %v", err)
+			return err
+		}
+
+		if _, err := b.bot.Send(tgbotapi.NewMessage(userID, "Добавлен успешно")); err != nil {
+			b.log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		return nil
+	}
+
+	return ErrOperationType
 }
 
 func (b *Bot) storeDataNotificationOperationType(ctx context.Context, storeData *stateful.StoreData, update *tgbotapi.Message) error {
@@ -202,6 +271,9 @@ func getStoreData(storeData *stateful.StoreData) any {
 		return storeData.Sender
 	case storeData.Admin != nil:
 		return storeData.Admin
+	case storeData.SpamBot != nil:
+		return storeData.SpamBot
+
 	}
 	return nil
 }
@@ -222,8 +294,17 @@ func isUrl(str string) bool {
 }
 
 func (b *Bot) sendHelloSetting(userID int64, channelName string) error {
-	msg := tgbotapi.NewMessage(userID, handler.NotificationSettingText(channelName))
-	msg.ReplyMarkup = &markup.HelloMessageSetting
+	var (
+		msg tgbotapi.MessageConfig
+	)
+
+	if channelName != "" {
+		msg = tgbotapi.NewMessage(userID, handler.NotificationSettingText(channelName))
+		msg.ReplyMarkup = &markup.HelloMessageSetting
+	} else {
+		msg = tgbotapi.NewMessage(userID, handler.NotificationGlobalSetting)
+		msg.ReplyMarkup = &markup.GlobalHelloMessageSetting
+	}
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	if _, err := b.bot.Send(msg); err != nil {

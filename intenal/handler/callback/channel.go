@@ -15,6 +15,7 @@ import (
 type CallbackChannel struct {
 	ChannelService service.ChannelService
 	RequestService service.RequestService
+	UserService    service.UserService
 	Log            *logger.Logger
 }
 
@@ -56,6 +57,11 @@ func (c *CallbackChannel) CallbackShowChannelInfo() tgbot.ViewFunc {
 			return nil
 		}
 
+		userCount, err := c.UserService.GetCountUserByChannelTgID(ctx, channel.TelegramID)
+		if err != nil {
+			c.Log.Error("UserService.GetCountUserByChannelTgID: failed to get count user in channel: %s", channel.ChannelName)
+		}
+
 		channel.WaitingCount, err = c.RequestService.GetCountByStatusRequestAndChannelTgID(ctx, tgbot.RequestInProgress, channel.TelegramID)
 		if err != nil {
 			c.Log.Error("RequestService.GetCountByStatusRequestAndChannelTgID: failed to get count waiting people")
@@ -63,7 +69,7 @@ func (c *CallbackChannel) CallbackShowChannelInfo() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
-			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount))
+			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount))
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msg.ReplyMarkup = &markup.InfoRequest
@@ -87,6 +93,11 @@ func (c *CallbackChannel) CallbackShowChannelInfoByName() tgbot.ViewFunc {
 			return nil
 		}
 
+		userCount, err := c.UserService.GetCountUserByChannelTgID(ctx, channel.TelegramID)
+		if err != nil {
+			c.Log.Error("UserService.GetCountUserByChannelTgID: failed to get count user in channel: %s", channel.ChannelName)
+		}
+
 		channel.WaitingCount, err = c.RequestService.GetCountByStatusRequestAndChannelTgID(ctx, tgbot.RequestInProgress, channel.TelegramID)
 		if err != nil {
 			c.Log.Error("RequestService.GetCountByStatusRequestAndChannelTgID: failed to get count waiting people:%v", err)
@@ -95,7 +106,7 @@ func (c *CallbackChannel) CallbackShowChannelInfoByName() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
-			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount))
+			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount))
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msg.ReplyMarkup = &markup.InfoRequest

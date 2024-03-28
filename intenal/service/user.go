@@ -17,6 +17,10 @@ type UserService interface {
 	GetAllIDByChannelID(ctx context.Context, channelName string) ([]int64, error)
 	CreateUserChannel(ctx context.Context, userID int64, channelTelegramID int64) error
 	GetAllAdmin(ctx context.Context) ([]entity.User, error)
+	GetCountUserByChannelTgID(ctx context.Context, channelID int64) (int, error)
+	UpdateBlockedBotStatus(ctx context.Context, userID int64, status bool) error
+	GetCountBlockedBot(ctx context.Context) (int, error)
+	GetCountBlockedBotByChannelID(ctx context.Context, channelTelegramID int64) (int, error)
 }
 
 type userService struct {
@@ -86,7 +90,7 @@ func (u *userService) CreateUser(ctx context.Context, user *entity.User) error {
 	}
 
 	if !isExist {
-		u.log.Info("Get user: %s, with request: %s", user.String())
+		u.log.Info("Get user: %s", user.String())
 
 		err := u.userRepo.CreateUser(ctx, user)
 		if err != nil {
@@ -116,4 +120,20 @@ func (u *userService) CreateUserChannel(ctx context.Context, userID int64, chann
 
 func (u *userService) GetAllAdmin(ctx context.Context) ([]entity.User, error) {
 	return u.userRepo.GetAllAdmin(ctx)
+}
+
+func (u *userService) GetCountUserByChannelTgID(ctx context.Context, channelID int64) (int, error) {
+	return u.userRepo.GetCountUserByChannelTgID(ctx, channelID)
+}
+
+func (u *userService) UpdateBlockedBotStatus(ctx context.Context, userID int64, status bool) error {
+	return u.userRepo.UpdateBlockedBotStatus(ctx, userID, status)
+}
+
+func (u *userService) GetCountBlockedBot(ctx context.Context) (int, error) {
+	return u.userRepo.GetCountBlockedBot(ctx)
+}
+
+func (u *userService) GetCountBlockedBotByChannelID(ctx context.Context, channelTelegramID int64) (int, error) {
+	return u.userRepo.GetCountBlockedBotByChannelID(ctx, channelTelegramID)
 }

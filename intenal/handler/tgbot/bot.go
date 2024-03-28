@@ -9,6 +9,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/config"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/spam"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 	"runtime/debug"
@@ -31,9 +32,10 @@ const (
 )
 
 type Bot struct {
-	bot   *tgbotapi.BotAPI
-	log   *logger.Logger
-	store *stateful.Store
+	bot            *tgbotapi.BotAPI
+	log            *logger.Logger
+	store          *stateful.Store
+	spammerStorage *spam.SpammerBots
 
 	cmdView      map[string]ViewFunc
 	callbackView map[string]ViewFunc
@@ -43,6 +45,7 @@ type Bot struct {
 	channelService      service.ChannelService
 	notificationService service.NotificationService
 	senderService       service.SenderService
+	spamBotService      service.SpamBotService
 
 	mu      sync.RWMutex
 	isDebug bool
@@ -51,20 +54,24 @@ type Bot struct {
 func NewBot(bot *tgbotapi.BotAPI,
 	log *logger.Logger,
 	store *stateful.Store,
+	spammerStorage *spam.SpammerBots,
 	requestService service.RequestService,
 	userService service.UserService,
 	channelService service.ChannelService,
 	notificationService service.NotificationService,
-	senderService service.SenderService) *Bot {
+	senderService service.SenderService,
+	spamBotService service.SpamBotService) *Bot {
 	return &Bot{
 		bot:                 bot,
 		log:                 log,
 		store:               store,
+		spammerStorage:      spammerStorage,
 		requestService:      requestService,
 		userService:         userService,
 		channelService:      channelService,
 		notificationService: notificationService,
 		senderService:       senderService,
+		spamBotService:      spamBotService,
 	}
 }
 
@@ -101,7 +108,7 @@ func (b *Bot) Run(ctx context.Context) error {
 			updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
 			b.isDebug = false
-			b.jsonDebug(update.Message)
+			b.jsonDebug(update)
 
 			b.handlerUpdate(updateCtx, &update)
 
@@ -124,7 +131,7 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		b.log.Info("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
 		// check if exist some state, with user message
-		isExist, err := b.getState(ctx, update.Message)
+		isExist, err := b.getState(ctx, update)
 		if isExist {
 			if err != nil {
 				b.log.Error("failed to work with state: %v", err)
@@ -158,6 +165,17 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		//  if press button
 	} else if update.CallbackQuery != nil {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
+
+		// check if exist some state, with user callback
+		//isExist, err := b.getStateCallback(ctx, update)
+		//if isExist {
+		//	if err != nil {
+		//		b.log.Error("failed to work with state: %v", err)
+		//		handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
+		//		return
+		//	}
+		//	return
+		//}
 
 		var callback ViewFunc
 
@@ -196,18 +214,30 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 
 		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot); err != nil {
 			b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
-			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
+			return
 		}
+
+		// statistic for request in a day
+		b.store.IncrementSuccessfulSentMsg(update.ChatJoinRequest.Chat.ID)
 
 		// if bot update/delete from channel
 	} else if update.MyChatMember != nil {
-		b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
 
-		if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
-			b.log.Error("channelService.ChatMember: %v", err)
-			handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
-			return
+		if update.MyChatMember.Chat.IsChannel() {
+			b.log.Info("[%s] %s", update.MyChatMember.From.UserName, update.MyChatMember.NewChatMember.Status)
+			if err := b.channelService.ChatMember(ctx, channelUpdateToModel(update)); err != nil {
+				b.log.Error("channelService.ChatMember: %v", err)
+				return
+			}
 		}
+
+		if update.MyChatMember.NewChatMember.WasKicked() {
+			if err := b.userService.UpdateBlockedBotStatus(ctx, update.MyChatMember.From.ID, true); err != nil {
+				b.log.Error("userService.UpdateBlockedBotStatus: %v", err)
+				return
+			}
+		}
+
 	}
 }
 

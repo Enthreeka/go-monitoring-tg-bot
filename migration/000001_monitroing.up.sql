@@ -1,3 +1,5 @@
+set timezone = 'Europe/Moscow';
+
 DO $$
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role') THEN
@@ -15,7 +17,7 @@ DO $$
 DO $$
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'chan_status') THEN
-            CREATE TYPE chan_status AS ENUM ('kicked','administrator','left');
+            CREATE TYPE chan_status AS ENUM ('kicked','administrator','left','member');
         END IF;
     END $$;
 
@@ -28,8 +30,6 @@ create table if not exists "user"(
     user_role         role default 'user' not null,
     primary key (id)
 );
-
-
 
 create table if not exists channel(
     id int generated always as identity,
@@ -49,7 +49,6 @@ create table if not exists user_channel(
     foreign key (channel_tg_id)
         references channel (tg_id) on delete cascade
 );
-
 
 create table if not exists notification(
     id int generated always as identity,
@@ -85,4 +84,12 @@ create table if not exists sender(
         references channel (tg_id) on delete cascade
 );
 
-update "user" set user_role = 'superAdmin' where tg_username = 'n3ksmrnv';
+create table if not exists spam_bot(
+    id int generated always as identity,
+    token varchar(255),
+    bot_name varchar(150) null,
+    primary key (id)
+);
+
+alter table "user"
+    add blocked_bot bool default false;

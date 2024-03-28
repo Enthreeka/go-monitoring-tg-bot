@@ -9,15 +9,16 @@ const (
 	MessageShowAllChannel = `<strong>Ниже представлен список каналов, в которых бот является администратором</strong>`
 )
 
-func MessageGetChannelInfo(channel string, waitingCount int) string {
+func MessageGetChannelInfo(channel string, waitingCount int, userCount int) string {
 	return fmt.Sprintf("<strong>Управление каналом</strong>\n"+
 		"Канал:<i>%s</i> \n\n"+
-		"Количество людей, которые ожидают принятия: %d", channel, waitingCount)
+		"Количество людей, которые ожидают принятия: %d\n\n"+
+		"Количество людей в базе бота по данному каналу: %d", channel, waitingCount, userCount)
 }
 
 const (
 	GeneralMainBotMenu     = `<b>Главное меню бота</b>`
-	GeneralUserSettingMenu = "<b>Взаимодествие с данными пользователей</b>"
+	GeneralUserSettingMenu = "<b>Взаимодействие с данными пользователей</b>"
 )
 
 const (
@@ -34,7 +35,6 @@ const (
 	UserSetAdmin      = "Отправьте никнейм пользователя, которого хотите назначить администратором"
 	UserSetSuperAdmin = "Отправьте никнейм пользователя, которого хотите назначить супер администратором"
 	UserDeleteAdmin   = "Отправьте никнейм пользователя, у которого хотите забрать админские права"
-	UserAdminCancel   = "Команда отменена"
 )
 
 func UserExcelFileText() string {
@@ -48,17 +48,29 @@ func UserSenderSetting(channel string) string {
 }
 
 const (
-	RequestApproved = `Все заявки статуса "in progress" были приняты`
-	RequestDecline  = `Все заявки статуса "in progress" были отклонены`
-	RequestEmpty    = `Запросы отсутствуют`
+	RequestEmpty = `Запросы отсутствуют`
 )
 
-func RequestError(countErr int8) string {
-	return fmt.Sprintf("Не удалость обработать %d людей", countErr)
+func RequestDeclineText(countRejected int) string {
+	return fmt.Sprintf("Людей было отклонено: %d", countRejected)
+
 }
 
-func RequestApproveThroughTime(seconds int) string {
-	return fmt.Sprintf("Все заявки статуса \"in progress\" были приняты через заданный промежуток времени: : %d", seconds)
+func RequestApprovedText(countApproved int) string {
+	return fmt.Sprintf("Людей было принято: %d", countApproved)
+}
+
+func RequestError(countErr int) string {
+	return fmt.Sprintf("Со стороны ограничений телеграмма не удалость обработать %d людей", countErr)
+}
+
+func RequestApproveThroughTime(seconds int, countApproved int) string {
+	return fmt.Sprintf("Было принято %d людей через заданный промежуток времени: %d", countApproved, seconds)
+}
+
+func RequestStatistic(day int, countRequest int, countSentMsg int64, channelName string) string {
+	return fmt.Sprintf("За число: %d, было подано заявок: %d, по каналу: %s. Успешно отправленных сообщений"+
+		" %d", day, countRequest, channelName, countSentMsg)
 }
 
 func NotificationSettingText(channel string) string {
@@ -67,15 +79,29 @@ func NotificationSettingText(channel string) string {
 		"Кнопка `<u>Отправить пример рассылки</u>` отправит вам сообщение такого же вида, как это будут видеть новые пользователи", channel)
 }
 
+func NotificationGlobalSendingStat(value int64) string {
+	return fmt.Sprintf("Рассылка по всей базе завершена, число успешно отправленных сообщений: %d", value)
+}
+
 const (
 	NotificationUpdateText   = `Отправьте сообщение, которое будет отправляться новым пользователям`
 	NotificationUpdateFile   = "Отправьте файл/фотографию, который будет отправляться новым пользователям\n\nЕсли отправляете фотографию, то поставьте галочку для сжатия изображения"
 	NotificationUpdateButton = "Отправьте сообщение и ссылку для создания кнопки, которая будет отправляться новым пользователям. \n" +
 		"Пример сообщения: на чем написан бот?|https://go.dev/"
-	NotificationCancel       = "Команда была отменена"
 	NotificationEmpty        = "Рассылка отсутствует"
 	NotificationDeleteText   = "Текст успешно удален"
 	NotificationDeleteButton = "Кнопка успешно удалена"
 	NotificationDeleteFile   = "Документ/фотография успешно удалена"
-	NotificationExampleError = "С кнопкой обязательно должно быть сообщение/файл"
+
+	NotificationGlobalSetting      = "<strong>Управление рассылкой для всех пользователей</strong>\n"
+	NotificationGlobalUpdateText   = `Отправьте сообщение, которое отправится пользователям`
+	NotificationGlobalUpdateFile   = "Отправьте файл/фотографию, которое отправится пользователям\n\nЕсли отправляете фотографию, то поставьте галочку для сжатия изображения"
+	NotificationGlobalUpdateButton = "Отправьте сообщение и ссылку для создания кнопки, которое отправится пользователям. \n" +
+		"Пример сообщения: на чем написан бот?|https://go.dev/"
+)
+
+const (
+	SpamBotAdd    = `Отправьте токен бота`
+	SpamBotDelete = `Выберите бота, которого хотите удалить из базы`
+	SpamBotGet    = `Список всех доступных ботов для рассылок`
 )

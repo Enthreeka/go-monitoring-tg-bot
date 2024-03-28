@@ -60,6 +60,10 @@ func (n Notification) String() string {
 		"| button_text: %s)", text, fileID, fileType, buttonURL, buttonText)
 }
 
+func (n Notification) IsEmpty() bool {
+	return n.NotificationText == nil && n.ButtonURL == nil && n.FileID == nil
+}
+
 func GetButtonData(text string) (string, string) {
 	parts := strings.Split(text, "|")
 	if len(parts) != 2 {

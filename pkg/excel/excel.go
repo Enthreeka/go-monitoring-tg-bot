@@ -46,6 +46,7 @@ func (e *Excel) GenerateExcelFile(users []entity.User, username string) (string,
 		"D1": "ChannelFrom",
 		"E1": "CreatedAt",
 		"F1": "Role",
+		"G1": "botWasBlocked",
 	}
 
 	for cell, value := range headers {
@@ -70,6 +71,7 @@ func (e *Excel) GenerateExcelFile(users []entity.User, username string) (string,
 		}
 		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), user.CreatedAt.Format("2006-01-02 15:04:05"))
 		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), user.Role)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), user.BlockedBot)
 	}
 
 	err := f.SaveAs(filename)

@@ -11,6 +11,8 @@ var (
 			tgbotapi.NewInlineKeyboardButtonData("Управление каналами️", "channel_setting")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Управление данными пользователей", "user_setting")),
+		//tgbotapi.NewInlineKeyboardRow(
+		//	tgbotapi.NewInlineKeyboardButtonData("Управление дополнительными ботами для рассылки", "bot_spam_settings")),
 	)
 
 	InfoRequest = tgbotapi.NewInlineKeyboardMarkup(
@@ -25,11 +27,17 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Принять через: 600с", "approved_time")),
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Статистика за день", "get_statistic")),
+		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "channel_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 
 	UserSettingMenu = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Рассылка по всей базе", "all_db_sender")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Настройка рассылки по всей базе", "global_setting_notification")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Скачать Excel файл с пользователя", "download_excel")),
 		tgbotapi.NewInlineKeyboardRow(
@@ -50,6 +58,23 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "example_notification")),
 		tgbotapi.NewInlineKeyboardRow(button.ComebackSetting),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	GlobalHelloMessageSetting = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить сообщение", "global_add_text_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить сообщение", "global_delete_text_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить фотографию", "global_add_photo_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить фотографию", "global_delete_photo_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Изменить кнопку", "global_add_button_notification"),
+			tgbotapi.NewInlineKeyboardButtonData("Удалить кнопку", "global_delete_button_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отправить пример рассылки", "global_example_notification")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "user_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
 	)
 
@@ -98,5 +123,24 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "role_setting")),
 		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	BotSpamSetting = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Добавить бота", "add_spam_bot")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Удалить бота", "delete_spam_bot")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Список подключенных ботов", "list_spam_bot")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Сделать рассылку", "activate_spam_bots")),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+
+	AllDbSender = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Настройка рассылки", "all_db_sender_setting")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Настройка рассылки", "all_db_sender_setting")),
 	)
 )
