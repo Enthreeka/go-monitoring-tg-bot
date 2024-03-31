@@ -2,6 +2,7 @@ package callback
 
 import (
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 )
 
@@ -29,4 +30,9 @@ func TestFindTitle(t *testing.T) {
 			assert.Equal(t, tt.wantName, name)
 		})
 	}
+}
+
+func TestStrings(t *testing.T) {
+	_, after, _ := strings.Cut("Вы действительно хотите присоединиться к каналу: china?", "к каналу:")
+	t.Log(after[1 : len(after)-1])
 }

@@ -15,6 +15,7 @@ type User struct {
 	BlockedBot  bool      `json:"blocked_bot"`
 
 	ChannelTelegramID int64 `json:"channel_telegram_id,omitempty"`
+	IsPassedCaptcha   bool  `json:"is_passed_captcha"`
 }
 
 func (u User) String() string {

@@ -21,6 +21,8 @@ type UserRepo interface {
 	UpdateBlockedBotStatus(ctx context.Context, userID int64, status bool) error
 	GetCountBlockedBot(ctx context.Context) (int, error)
 	GetCountBlockedBotByChannelID(ctx context.Context, channelTelegramID int64) (int, error)
+	UpdateIsPassedCaptcha(ctx context.Context, status bool, userID int64) error
+	IsPassedCaptchaByUserID(ctx context.Context, userID int64) (bool, error)
 	UserChannelRepo
 }
 
@@ -42,7 +44,7 @@ func NewUserRepo(pg *postgres.Postgres) UserRepo {
 
 func (u *userRepo) collectRow(row pgx.Row) (*entity.User, error) {
 	var user entity.User
-	err := row.Scan(&user.ID, &user.UsernameTg, &user.CreatedAt, &user.Phone, &user.ChannelFrom, &user.Role, &user.BlockedBot)
+	err := row.Scan(&user.ID, &user.UsernameTg, &user.CreatedAt, &user.Phone, &user.ChannelFrom, &user.Role, &user.BlockedBot, &user.IsPassedCaptcha)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return nil, checkErr
 	}
@@ -226,4 +228,23 @@ func (u *userRepo) GetCountBlockedBotByChannelID(ctx context.Context, channelTel
 	}
 
 	return count, err
+}
+
+func (u *userRepo) UpdateIsPassedCaptcha(ctx context.Context, status bool, userID int64) error {
+	query := `update "user" set is_passed_captcha = $1 where id = $2`
+
+	_, err := u.Pool.Exec(ctx, query, status, userID)
+	return err
+}
+
+func (u *userRepo) IsPassedCaptchaByUserID(ctx context.Context, userID int64) (bool, error) {
+	query := `select is_passed_captcha from "user" where id = $1`
+	var isPassed bool
+
+	err := u.Pool.QueryRow(ctx, query, userID).Scan(&isPassed)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return isPassed, checkErr
+	}
+
+	return isPassed, err
 }

@@ -18,6 +18,7 @@ import (
 
 type CallbackNotification struct {
 	NotificationService service.NotificationService
+	ChannelService      service.ChannelService
 	Log                 *logger.Logger
 	Store               *stateful.Store
 }

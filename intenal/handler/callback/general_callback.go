@@ -4,14 +4,18 @@ import (
 	"context"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
+	"strings"
 )
 
 type CallbackGeneral struct {
-	Log *logger.Logger
+	NotificationService service.NotificationService
+	Log                 *logger.Logger
 }
 
 func (v *CallbackGeneral) CallbackStart() tgbot.ViewFunc {
@@ -38,6 +42,29 @@ func (v *CallbackGeneral) CallbackGetUserSettingMenu() tgbot.ViewFunc {
 			v.Log.Error("failed to send message", zap.Error(err))
 			return err
 		}
+		return nil
+	}
+}
+
+func (v *CallbackGeneral) CallbackConfirmCaptcha() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		_, after, exist := strings.Cut(update.CallbackQuery.Message.Text, "к каналу:")
+		if !exist {
+			v.Log.Error("failed to cut channel in CallbackConfirmCaptcha")
+			return nil
+		}
+		notification, err := v.NotificationService.GetByChannelName(ctx, after[1:len(after)-1])
+		if err != nil {
+			v.Log.Error("NotificationService.GetByChannelName: failed to get channel by name: %v", err)
+			return nil
+		}
+
+		sender := tg.NewSender(v.Log, notification, bot)
+		if err := sender.SendMsgToNewUser(update.FromChat().ID); err != nil {
+			v.Log.Error("sender.SendMsgToNewUser: failed to send msg in CallbackConfirmCaptcha: %v", err)
+			return nil
+		}
+
 		return nil
 	}
 }

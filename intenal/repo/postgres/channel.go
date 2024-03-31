@@ -20,6 +20,8 @@ type ChannelRepo interface {
 	GetAllAdminChannel(ctx context.Context) ([]entity.Channel, error)
 	GetChannelIDByChannelName(ctx context.Context, channelName string) (int64, error)
 	GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error)
+	UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error
+	GetChannelByUserID(ctx context.Context, userID int64) (string, error)
 }
 
 type channelRepo struct {
@@ -34,7 +36,7 @@ func NewChannelRepo(pg *postgres.Postgres) ChannelRepo {
 
 func (u *channelRepo) collectRow(row pgx.Row) (*entity.Channel, error) {
 	var channel entity.Channel
-	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status)
+	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, boterror.ErrNoRows
 	}
@@ -135,9 +137,35 @@ func (u *channelRepo) GetByChannelName(ctx context.Context, channelName string) 
 	query := `select * from channel where channel_name = $1`
 	channel := new(entity.Channel)
 
-	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status)
+	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return nil, checkErr
+	}
+
+	return channel, err
+}
+
+func (u *channelRepo) UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error {
+	query := `update channel set need_captcha = not need_captcha where channel_name = $1;`
+
+	_, err := u.Pool.Exec(ctx, query, channelName)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return checkErr
+	}
+
+	return err
+}
+
+func (u *channelRepo) GetChannelByUserID(ctx context.Context, userID int64) (string, error) {
+	query := `select channel_name from channel
+				join user_channel on  user_channel.channel_tg_id = channel.tg_id
+				where user_channel.user_id = $1 `
+
+	var channel string
+
+	err := u.Pool.QueryRow(ctx, query, userID).Scan(&channel)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return channel, checkErr
 	}
 
 	return channel, err

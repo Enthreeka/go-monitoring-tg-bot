@@ -69,7 +69,7 @@ func (c *CallbackChannel) CallbackShowChannelInfo() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
-			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount))
+			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount, channel.NeedCaptcha))
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msg.ReplyMarkup = &markup.InfoRequest
@@ -106,7 +106,7 @@ func (c *CallbackChannel) CallbackShowChannelInfoByName() tgbot.ViewFunc {
 		}
 
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
-			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount))
+			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount, channel.NeedCaptcha))
 		msg.ParseMode = tgbotapi.ModeHTML
 
 		msg.ReplyMarkup = &markup.InfoRequest
@@ -116,5 +116,27 @@ func (c *CallbackChannel) CallbackShowChannelInfoByName() tgbot.ViewFunc {
 			return err
 		}
 		return nil
+	}
+}
+
+func (c *CallbackChannel) CallbackCaptchaManager() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		c.Log.Info("", channelName)
+
+		if err := c.ChannelService.UpdateNeedCaptchaByChannelName(ctx, channelName); err != nil {
+			c.Log.Error("ChannelService.UpdateNeedCaptchaByChannelName: : %v", err)
+			handler.HandleError(bot, update, boterror.ParseErrToText(err))
+			return nil
+		}
+
+		callback := c.CallbackShowChannelInfoByName()
+		if err := callback(ctx, bot, update); err != nil {
+			c.Log.Error("failed to process callback in CallbackCaptchaManager: %v", err)
+			return err
+		}
+
+		return nil
+
 	}
 }

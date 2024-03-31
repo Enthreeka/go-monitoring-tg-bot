@@ -342,7 +342,23 @@ func (c *CallbackUser) CallbackGetAllAdmin() tgbot.ViewFunc {
 			return err
 		}
 
-		adminBytes, _ := json.MarshalIndent(admin, "", " ")
+		adminArgs := []struct {
+			Tg      string    `json:"Пользователь"`
+			Role    string    `json:"Роль"`
+			Created time.Time `json:"Создан"`
+		}(make([]struct {
+			Tg      string
+			Role    string
+			Created time.Time
+		}, len(admin)))
+
+		for key, value := range admin {
+			adminArgs[key].Created = value.CreatedAt
+			adminArgs[key].Role = value.Role
+			adminArgs[key].Tg = value.UsernameTg
+		}
+
+		adminBytes, _ := json.MarshalIndent(adminArgs, "", " ")
 
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
 			string(adminBytes))

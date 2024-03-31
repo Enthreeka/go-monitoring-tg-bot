@@ -9,11 +9,18 @@ const (
 	MessageShowAllChannel = `<strong>Ниже представлен список каналов, в которых бот является администратором</strong>`
 )
 
-func MessageGetChannelInfo(channel string, waitingCount int, userCount int) string {
+func MessageGetChannelInfo(channel string, waitingCount int, userCount int, isExistCaptcha bool) string {
+	var isExistCaptchaStr string
+	if isExistCaptcha == true {
+		isExistCaptchaStr = "Да"
+	} else {
+		isExistCaptchaStr = "Нет"
+	}
 	return fmt.Sprintf("<strong>Управление каналом</strong>\n"+
-		"Канал:<i>%s</i> \n\n"+
+		"Канал:<i>%s</i> \n"+
+		"Капча включена: %s\n\n"+
 		"Количество людей, которые ожидают принятия: %d\n\n"+
-		"Количество людей в базе бота по данному каналу: %d", channel, waitingCount, userCount)
+		"Количество людей в базе бота по данному каналу: %d", channel, isExistCaptchaStr, waitingCount, userCount)
 }
 
 const (
@@ -105,3 +112,7 @@ const (
 	SpamBotDelete = `Выберите бота, которого хотите удалить из базы`
 	SpamBotGet    = `Список всех доступных ботов для рассылок`
 )
+
+func BotCaptcha(channel string) string {
+	return fmt.Sprintf("Вы действительно хотите присоедениться к каналу: %s?\nДля подтверждения отправьте /confirm", channel)
+}

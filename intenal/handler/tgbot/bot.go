@@ -212,9 +212,24 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			return
 		}
 
-		if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot); err != nil {
-			b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
+		channel, err := b.channelService.GetByChannelName(ctx, update.ChatJoinRequest.Chat.Title)
+		if err != nil {
+			b.log.Error("channelService.GetByChannelName: %v", err)
 			return
+		}
+		// проверка в необходимости капчи по каналу todo: поместить в map
+		if channel.NeedCaptcha == true {
+			// отправка капчи новому пользователю
+			if err := b.sendCaptcha(ctx, req.UserID, update.ChatJoinRequest.Chat.Title); err != nil {
+				b.log.Error("sendMsgToNewUser: failed to send captcha to new user:%v, request:%v", err, req)
+				return
+			}
+		} else {
+			// приветственное сообщение
+			if err := b.sendMsgToNewUser(ctx, req.UserID, req.ChannelTelegramID, b.bot); err != nil {
+				b.log.Error("sendMsgToNewUser: failed to send msg to new user:%v, request:%v", err, req)
+				return
+			}
 		}
 
 		// statistic for request in a day
@@ -251,7 +266,13 @@ func (b *Bot) jsonDebug(update any) {
 	}
 }
 
+// todo изменить
 func (c *Bot) sendMsgToNewUser(ctx context.Context, userID int64, channelID int64, bot *tgbotapi.BotAPI) error {
+	//if err := c.userService.UpdateIsPassedCaptchaTrue(ctx); err != nil {
+	//	c.log.Error("userService.UpdateIsPassedCaptchaTrue: in sendMsgToNewUser: %v", err)
+	//	return err
+	//}
+
 	notification, err := c.notificationService.GetByChannelTelegramID(ctx, channelID)
 	if err != nil {
 		c.log.Error("NotificationService.GetByChannelName: failed to get channel: %v", err)

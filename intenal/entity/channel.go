@@ -14,6 +14,7 @@ type Channel struct {
 
 	Status       string `json:"status"`
 	WaitingCount int    `json:"waiting_count,omitempty"`
+	NeedCaptcha  bool   `json:"need_captcha"`
 }
 
 func (c Channel) String() string {
@@ -24,8 +25,8 @@ func (c Channel) String() string {
 		url = *c.ChannelURL
 	}
 
-	return fmt.Sprintf("(tg_id: %d | channel_name: %s | ChannelURL: %s | Status: %s)",
-		c.TelegramID, c.ChannelName, url, c.Status)
+	return fmt.Sprintf("(tg_id: %d | channel_name: %s | ChannelURL: %s | Status: %s | need_captcha: %v)",
+		c.TelegramID, c.ChannelName, url, c.Status, c.NeedCaptcha)
 }
 
 func GetID(data string) int {

@@ -93,3 +93,9 @@ create table if not exists spam_bot(
 
 alter table "user"
     add blocked_bot bool default false;
+
+alter table channel
+    add need_captcha bool default false;
+
+alter table  "user"
+    add is_passed_captcha bool default false;

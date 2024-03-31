@@ -21,6 +21,8 @@ type UserService interface {
 	UpdateBlockedBotStatus(ctx context.Context, userID int64, status bool) error
 	GetCountBlockedBot(ctx context.Context) (int, error)
 	GetCountBlockedBotByChannelID(ctx context.Context, channelTelegramID int64) (int, error)
+	UpdateIsPassedCaptcha(ctx context.Context, status bool, userID int64) error
+	IsPassedCaptchaByUserID(ctx context.Context, userID int64) (bool, error)
 }
 
 type userService struct {
@@ -136,4 +138,12 @@ func (u *userService) GetCountBlockedBot(ctx context.Context) (int, error) {
 
 func (u *userService) GetCountBlockedBotByChannelID(ctx context.Context, channelTelegramID int64) (int, error) {
 	return u.userRepo.GetCountBlockedBotByChannelID(ctx, channelTelegramID)
+}
+
+func (u *userService) UpdateIsPassedCaptcha(ctx context.Context, status bool, userID int64) error {
+	return u.userRepo.UpdateIsPassedCaptcha(ctx, status, userID)
+}
+
+func (u *userService) IsPassedCaptchaByUserID(ctx context.Context, userID int64) (bool, error) {
+	return u.userRepo.IsPassedCaptchaByUserID(ctx, userID)
 }

@@ -7,6 +7,11 @@ import (
 	"sync/atomic"
 )
 
+type Sender interface {
+	SendMsgToNewUser(userID int64) error
+	GetSuccessCounter() int64
+}
+
 type sender struct {
 	log          *logger.Logger
 	notification *entity.Notification

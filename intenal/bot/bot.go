@@ -65,7 +65,10 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 
 func (b *Bot) initHandlers(log *logger.Logger) {
 	b.generalViewHandler = view.ViewGeneral{
-		Log: log,
+		UserService:         b.userService,
+		ChannelService:      b.channelService,
+		NotificationService: b.notificationService,
+		Log:                 log,
 	}
 	b.channelCallbackHandler = callback.CallbackChannel{
 		ChannelService: b.channelService,
@@ -74,7 +77,8 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Log:            log,
 	}
 	b.generalCallbackHandler = callback.CallbackGeneral{
-		Log: log,
+		NotificationService: b.notificationService,
+		Log:                 log,
 	}
 	b.userCallbackHandler = callback.CallbackUser{
 		UserService:         b.userService,
@@ -92,6 +96,7 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		Store:               b.store,
 	}
 	b.notificationCallbackHandler = callback.CallbackNotification{
+		ChannelService:      b.channelService,
 		NotificationService: b.notificationService,
 		Log:                 log,
 		Store:               b.store,
@@ -133,10 +138,10 @@ func (b *Bot) initSpamStorage(ctx context.Context) {
 
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	bot, err := tgbotapi.NewBotAPI(cfg.Telegram.Token)
-	bot.Debug = false
 	if err != nil {
 		log.Fatal("failed to load token %v", err)
 	}
+	bot.Debug = false
 
 	log.Info("Authorized on account %s", bot.Self.UserName)
 
@@ -155,6 +160,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot := tgbot.NewBot(bot, log, b.store, b.spammerStorage, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService, b.spamBotService)
 
 	newBot.RegisterCommandView("start", middleware.AdminMiddleware(b.userService, b.generalViewHandler.ViewStart()))
+	newBot.RegisterCommandView("confirm", b.generalViewHandler.ViewConfirmCaptcha())
 
 	newBot.RegisterCommandCallback("main_menu", middleware.AdminMiddleware(b.userService, b.generalCallbackHandler.CallbackStart()))
 	newBot.RegisterCommandCallback("channel_setting", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackShowAllChannel()))
@@ -201,6 +207,9 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("global_delete_text_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteTextNotification()))
 	newBot.RegisterCommandCallback("global_delete_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteButtonNotification()))
 
+	newBot.RegisterCommandCallback("captcha_manager", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackCaptchaManager()))
+
+	//newBot.RegisterCommandCallback("press_captcha", b.generalCallbackHandler.CallbackConfirmCaptcha())
 	if err := newBot.Run(ctx); err != nil {
 		log.Error("failed to run tgbot: %v", err)
 	}

@@ -18,6 +18,8 @@ type ChannelService interface {
 	ChatMember(ctx context.Context, channel *entity.Channel) error
 	GetAllAdminChannel(ctx context.Context) (*tgbotapi.InlineKeyboardMarkup, error)
 	GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error)
+	UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error
+	GetChannelByUserID(ctx context.Context, userID int64) (string, error)
 }
 
 type channelService struct {
@@ -117,4 +119,12 @@ func (c *channelService) createChannelMarkup(channel []entity.Channel, command s
 
 func (c *channelService) GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error) {
 	return c.channelRepo.GetByChannelName(ctx, channelName)
+}
+
+func (c *channelService) UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error {
+	return c.channelRepo.UpdateNeedCaptchaByChannelName(ctx, channelName)
+}
+
+func (c *channelService) GetChannelByUserID(ctx context.Context, userID int64) (string, error) {
+	return c.channelRepo.GetChannelByUserID(ctx, userID)
 }
