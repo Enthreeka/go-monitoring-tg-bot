@@ -65,6 +65,8 @@ func (v *CallbackGeneral) CallbackConfirmCaptcha() tgbot.ViewFunc {
 			return nil
 		}
 
+		v.Log.Info("CallbackConfirmCaptcha: notification: %v, channel: %s", notification, after[1:len(after)-1])
+
 		return nil
 	}
 }
