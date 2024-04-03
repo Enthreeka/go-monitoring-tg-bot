@@ -114,5 +114,5 @@ const (
 )
 
 func BotCaptcha(channel string) string {
-	return fmt.Sprintf("Вы действительно хотите присоедениться к каналу: %s?\nДля подтверждения отправьте /confirm", channel)
+	return fmt.Sprintf("Вы действительно хотите присоединиться к каналу: %s?\nДля подтверждения отправьте /confirm", channel)
 }
