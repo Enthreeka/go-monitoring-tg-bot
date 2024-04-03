@@ -50,7 +50,7 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 				return nil
 			}
 		}
-		_, after, exist := strings.Cut(update.CallbackQuery.Message.Text, "к каналу:")
+		_, after, exist := strings.Cut(update.Message.Text, "к каналу:")
 		if !exist {
 			v.Log.Error("failed to cut channel in CallbackConfirmCaptcha")
 			return nil
