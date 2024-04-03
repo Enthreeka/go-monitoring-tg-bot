@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -9,6 +10,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
+	"strings"
 )
 
 type ViewGeneral struct {
@@ -48,16 +50,27 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 				return nil
 			}
 		}
-
-		channelName, err := v.ChannelService.GetChannelByUserID(ctx, userID)
-		if err != nil {
-			v.Log.Error("ChannelService.GetChannelByUserID", zap.Error(err))
+		_, after, exist := strings.Cut(update.CallbackQuery.Message.Text, "к каналу:")
+		if !exist {
+			v.Log.Error("failed to cut channel in CallbackConfirmCaptcha")
 			return nil
 		}
 
-		noritifcation, err := v.NotificationService.GetByChannelName(ctx, channelName)
+		var channel *entity.Channel
+		channel, err = v.ChannelService.GetByChannelName(ctx, after[1:len(after)-1])
+		if err != nil {
+			v.Log.Error("ChannelService.GetByChannelName", zap.Error(err))
+
+			channel.ChannelName, err = v.ChannelService.GetChannelByUserID(ctx, userID)
+			if err != nil {
+				v.Log.Error("ChannelService.GetChannelByUserID", zap.Error(err))
+				return nil
+			}
+		}
+
+		noritifcation, err := v.NotificationService.GetByChannelName(ctx, channel.ChannelName)
 		if err != nil || noritifcation == nil {
-			v.Log.Error("NotificationService.GetByChannelName", zap.Error(err), channelName)
+			v.Log.Error("NotificationService.GetByChannelName", zap.Error(err), channel.ChannelName)
 			return nil
 		}
 
