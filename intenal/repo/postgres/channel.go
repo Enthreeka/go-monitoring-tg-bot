@@ -22,6 +22,7 @@ type ChannelRepo interface {
 	GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error)
 	UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error
 	GetChannelByUserID(ctx context.Context, userID int64) (string, error)
+	GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error)
 }
 
 type channelRepo struct {
@@ -166,6 +167,18 @@ func (u *channelRepo) GetChannelByUserID(ctx context.Context, userID int64) (str
 	err := u.Pool.QueryRow(ctx, query, userID).Scan(&channel)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return channel, checkErr
+	}
+
+	return channel, err
+}
+
+func (u *channelRepo) GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error) {
+	query := `select * from channel where tg_id = $1`
+	channel := new(entity.Channel)
+
+	err := u.Pool.QueryRow(ctx, query, channelTgID).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return nil, checkErr
 	}
 
 	return channel, err

@@ -212,9 +212,9 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 			return
 		}
 
-		channel, err := b.channelService.GetByChannelName(ctx, update.ChatJoinRequest.Chat.Title)
+		channel, err := b.channelService.GetChannelByChannelTgID(ctx, update.ChatJoinRequest.Chat.ID)
 		if err != nil {
-			b.log.Error("channelService.GetByChannelName: %v", err)
+			b.log.Error("channelService.GetChannelByChannelTgID: %v", err)
 			return
 		}
 		// проверка в необходимости капчи по каналу todo: поместить в map

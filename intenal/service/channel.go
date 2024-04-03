@@ -20,6 +20,7 @@ type ChannelService interface {
 	GetByChannelName(ctx context.Context, channelName string) (*entity.Channel, error)
 	UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error
 	GetChannelByUserID(ctx context.Context, userID int64) (string, error)
+	GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error)
 }
 
 type channelService struct {
@@ -127,4 +128,8 @@ func (c *channelService) UpdateNeedCaptchaByChannelName(ctx context.Context, cha
 
 func (c *channelService) GetChannelByUserID(ctx context.Context, userID int64) (string, error) {
 	return c.channelRepo.GetChannelByUserID(ctx, userID)
+}
+
+func (c *channelService) GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error) {
+	return c.channelRepo.GetChannelByChannelTgID(ctx, channelTgID)
 }
