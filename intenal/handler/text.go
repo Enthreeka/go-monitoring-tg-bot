@@ -116,3 +116,7 @@ const (
 func BotCaptcha(channel string) string {
 	return fmt.Sprintf("Вы действительно хотите присоединиться к каналу: %s?\nДля подтверждения нажмите на /confirm", channel)
 }
+
+const (
+	ChannelSetTimer = "Отправьте время в минутах, для авто принятия пользователей"
+)

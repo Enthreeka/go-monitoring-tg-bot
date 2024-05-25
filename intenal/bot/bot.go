@@ -75,6 +75,7 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		RequestService: b.requestService,
 		UserService:    b.userService,
 		Log:            log,
+		Store:          b.store,
 	}
 	b.generalCallbackHandler = callback.CallbackGeneral{
 		NotificationService: b.notificationService,
@@ -208,6 +209,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("global_delete_button_notification", middleware.AdminMiddleware(b.userService, b.notificationCallbackHandler.CallbackGlobalDeleteButtonNotification()))
 
 	newBot.RegisterCommandCallback("captcha_manager", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackCaptchaManager()))
+	newBot.RegisterCommandCallback("time_setting", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackTimerSetting()))
 
 	//newBot.RegisterCommandCallback("press_captcha", b.generalCallbackHandler.CallbackConfirmCaptcha())
 	if err := newBot.Run(ctx); err != nil {

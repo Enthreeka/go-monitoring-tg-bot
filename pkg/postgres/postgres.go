@@ -43,7 +43,7 @@ func New(ctx context.Context, maxAttempts int, url string) (*Postgres, error) {
 	}, maxAttempts, 5*time.Second)
 
 	if err != nil {
-		log.Fatal("error do with tries postgresql")
+		log.Fatalf("error do with tries postgresql: %s", url)
 	}
 
 	return db, nil

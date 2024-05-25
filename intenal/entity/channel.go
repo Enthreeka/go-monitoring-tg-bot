@@ -11,6 +11,7 @@ type Channel struct {
 	TelegramID  int64   `json:"tg_id"`
 	ChannelName string  `json:"channel_name"`
 	ChannelURL  *string `json:"channel_url"`
+	AcceptTimer int     `json:"accept_timer"`
 
 	Status       string `json:"status"`
 	WaitingCount int    `json:"waiting_count,omitempty"`

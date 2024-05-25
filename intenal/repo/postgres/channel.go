@@ -23,6 +23,7 @@ type ChannelRepo interface {
 	UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error
 	GetChannelByUserID(ctx context.Context, userID int64) (string, error)
 	GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error)
+	SetAcceptTimer(ctx context.Context, channelName string, timer int) error
 }
 
 type channelRepo struct {
@@ -37,7 +38,7 @@ func NewChannelRepo(pg *postgres.Postgres) ChannelRepo {
 
 func (u *channelRepo) collectRow(row pgx.Row) (*entity.Channel, error) {
 	var channel entity.Channel
-	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha)
+	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha, &channel.AcceptTimer)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, boterror.ErrNoRows
 	}
@@ -138,7 +139,7 @@ func (u *channelRepo) GetByChannelName(ctx context.Context, channelName string) 
 	query := `select * from channel where channel_name = $1`
 	channel := new(entity.Channel)
 
-	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha)
+	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha, &channel.AcceptTimer)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return nil, checkErr
 	}
@@ -182,4 +183,15 @@ func (u *channelRepo) GetChannelByChannelTgID(ctx context.Context, channelTgID i
 	}
 
 	return channel, err
+}
+
+func (u *channelRepo) SetAcceptTimer(ctx context.Context, channelName string, timer int) error {
+	query := `update channel set accept_timer = $1 where channel_name = $2`
+
+	_, err := u.Pool.Exec(ctx, query, timer, channelName)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return checkErr
+	}
+
+	return err
 }

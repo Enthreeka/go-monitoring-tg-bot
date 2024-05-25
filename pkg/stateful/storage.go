@@ -16,9 +16,15 @@ const (
 
 	OperationAddBot    = "add_bot"
 	OperationDeleteBot = "delete_bot"
+
+	OperationSetTimer = "set_timer"
 )
 
 type Channel struct {
+	MessageID   int
+	ChannelName string
+
+	OperationType string
 }
 
 type Sender struct {

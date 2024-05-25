@@ -21,6 +21,7 @@ type ChannelService interface {
 	UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error
 	GetChannelByUserID(ctx context.Context, userID int64) (string, error)
 	GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error)
+	SetAcceptTimer(ctx context.Context, channelName string, timer int) error
 }
 
 type channelService struct {
@@ -132,4 +133,8 @@ func (c *channelService) GetChannelByUserID(ctx context.Context, userID int64) (
 
 func (c *channelService) GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error) {
 	return c.channelRepo.GetChannelByChannelTgID(ctx, channelTgID)
+}
+
+func (c *channelService) SetAcceptTimer(ctx context.Context, channelName string, timer int) error {
+	return c.channelRepo.SetAcceptTimer(ctx, channelName, timer)
 }

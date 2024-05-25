@@ -10,6 +10,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 	"net/url"
+	"strconv"
 )
 
 var (
@@ -40,6 +41,13 @@ func (b *Bot) getState(ctx context.Context, update *tgbotapi.Update) (bool, erro
 		}
 
 		switch typeData.(type) {
+		case *stateful.Channel:
+			if err := b.storeDataChannelOperationType(ctx, storeData, update.Message); err != nil {
+				b.log.Error("storeDataNotificationOperationType: %v", err)
+				return true, err
+			}
+			return true, nil
+
 		case *stateful.Notification:
 			if err := b.storeDataNotificationOperationType(ctx, storeData, update.Message); err != nil {
 				b.log.Error("storeDataNotificationOperationType: %v", err)
@@ -130,6 +138,27 @@ func (b *Bot) storeDataSpamBotOperationType(ctx context.Context, storeData *stat
 			return err
 		}
 
+		return nil
+	}
+
+	return ErrOperationType
+}
+
+func (b *Bot) storeDataChannelOperationType(ctx context.Context, storeData *stateful.StoreData, update *tgbotapi.Message) error {
+	userID := update.From.ID
+	defer b.store.Delete(userID)
+	b.log.Info("storeDataChannelOperationType: %v", storeData)
+
+	switch storeData.Channel.OperationType {
+	case stateful.OperationSetTimer:
+		timer, err := strconv.Atoi(update.Text)
+		if err != nil {
+			return errors.New("send not int type")
+		}
+		if err := b.channelService.SetAcceptTimer(ctx, storeData.Channel.ChannelName, timer); err != nil {
+			b.log.Error("channelService.SetAcceptTimer: %v", err)
+			return err
+		}
 		return nil
 	}
 
@@ -273,6 +302,8 @@ func getStoreData(storeData *stateful.StoreData) any {
 		return storeData.Admin
 	case storeData.SpamBot != nil:
 		return storeData.SpamBot
+	case storeData.Channel != nil:
+		return storeData.Channel
 
 	}
 	return nil

@@ -144,65 +144,73 @@ func (c *CallbackRequest) CallbackRejectAllRequest() tgbot.ViewFunc {
 func (c *CallbackRequest) CallbackApproveAllThroughTime() tgbot.ViewFunc {
 	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
 		go func(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
-			seconds := 600
-			time.Sleep(time.Duration(seconds) * time.Second)
-
 			var (
 				channelName   = findTitle(update.CallbackQuery.Message.Text)
 				countErr      int
 				countApproved int
 			)
 
-			request, err := c.RequestService.GetAllByStatusRequest(context.Background(), tgbot.RequestInProgress, channelName)
+			ch, err := c.ChannelService.GetByChannelName(context.Background(), channelName)
 			if err != nil {
-				if errors.Is(err, boterror.ErrNoRows) {
-					if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestEmpty)); err != nil {
-						c.Log.Error("failed to send message", zap.Error(err))
-						return
-					}
-					return
-				}
-				c.Log.Error("requestService.GetAllByStatusRequest: failed to get all in progress request: %v", err)
+				c.Log.Error("ChannelService.GetByChannelName: failed to get channel data: %v", err)
 				handler.HandleError(bot, update, boterror.ParseErrToText(err))
 				return
 			}
 
-			for _, req := range request {
-				approveRequest := tgbotapi.ApproveChatJoinRequestConfig{
-					ChatConfig: tgbotapi.ChatConfig{
-						ChatID: req.ChannelTelegramID,
-					},
-					UserID: req.UserID,
+			time.AfterFunc(time.Duration(ch.AcceptTimer)*time.Minute, func() {
+				c.Log.Info("started AfterFunc in CallbackApproveAllThroughTime")
+				request, err := c.RequestService.GetAllByStatusRequest(context.Background(), tgbot.RequestInProgress, channelName)
+				if err != nil {
+					if errors.Is(err, boterror.ErrNoRows) {
+						if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestEmpty)); err != nil {
+							c.Log.Error("failed to send message", zap.Error(err))
+							return
+						}
+						return
+					}
+					c.Log.Error("requestService.GetAllByStatusRequest: failed to get all in progress request: %v", err)
+					handler.HandleError(bot, update, boterror.ParseErrToText(err))
+					return
 				}
 
-				if _, err := bot.Request(approveRequest); err != nil {
-					c.Log.Error("failed to approve requests: %v, request: %v", err, req)
-					countErr++
-
-					if err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestRejected, req.ID); err != nil {
-						c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
-							channelName, err, req)
+				for _, req := range request {
+					approveRequest := tgbotapi.ApproveChatJoinRequestConfig{
+						ChatConfig: tgbotapi.ChatConfig{
+							ChatID: req.ChannelTelegramID,
+						},
+						UserID: req.UserID,
 					}
 
-					continue
+					if _, err := bot.Request(approveRequest); err != nil {
+						c.Log.Error("failed to approve requests: %v, request: %v", err, req)
+						countErr++
+
+						if err = c.RequestService.UpdateStatusRequestByID(ctx, tgbot.RequestRejected, req.ID); err != nil {
+							c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v, request:%v",
+								channelName, err, req)
+						}
+
+						continue
+					}
+
+					if err = c.RequestService.UpdateStatusRequestByID(context.Background(), tgbot.RequestApproved, req.ID); err != nil {
+						c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v", channelName, err)
+					}
+					countApproved++
 				}
 
-				if err = c.RequestService.UpdateStatusRequestByID(context.Background(), tgbot.RequestApproved, req.ID); err != nil {
-					c.Log.Error("RequestService.UpdateStatusRequestByID: failed to update status request:%s: %v", channelName, err)
+				if countErr > 0 {
+					if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestError(countErr))); err != nil {
+						c.Log.Error("failed to send msg: %v", err)
+					}
 				}
-				countApproved++
-			}
 
-			if countErr > 0 {
-				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestError(countErr))); err != nil {
+				if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestApproveThroughTime(ch.AcceptTimer, countApproved))); err != nil {
 					c.Log.Error("failed to send msg: %v", err)
+					return
 				}
-			}
-
-			if _, err := bot.Send(tgbotapi.NewMessage(update.FromChat().ID, handler.RequestApproveThroughTime(seconds, countApproved))); err != nil {
-				c.Log.Error("failed to send msg: %v", err)
 				return
-			}
+			})
 		}(update, bot)
 
 		return nil

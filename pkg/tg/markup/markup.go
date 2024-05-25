@@ -1,6 +1,7 @@
 package markup
 
 import (
+	"fmt"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/button"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -27,7 +28,9 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Настройка рассылки по базе", "sender_setting")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Принять через: 600с", "approved_time")),
+			tgbotapi.NewInlineKeyboardButtonData("Принять через установленное время", "approved_time")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Назначить время принятия", "time_setting")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Статистика за день", "get_statistic")),
 		tgbotapi.NewInlineKeyboardRow(
@@ -150,3 +153,27 @@ var (
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("ДА", "press_captcha")))
 )
+
+func InfoRequestV2(time int) tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Принять всех", "approved_all")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отклонить всех", "rejected_all")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Включить/Отключить капчу", "captcha_manager")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Настройка приветственного сообщения", "hello_setting")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Настройка рассылки по базе", "sender_setting")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("Принять через установленное время: %dм", time), "approved_time")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Назначить время принятия", "time_setting")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Статистика за день", "get_statistic")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Вернуться назад", "channel_setting")),
+		tgbotapi.NewInlineKeyboardRow(button.MainMenuButton),
+	)
+}

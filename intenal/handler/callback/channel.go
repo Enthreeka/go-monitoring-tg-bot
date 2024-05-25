@@ -8,8 +8,10 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.uber.org/zap"
 )
 
 type CallbackChannel struct {
@@ -17,6 +19,7 @@ type CallbackChannel struct {
 	RequestService service.RequestService
 	UserService    service.UserService
 	Log            *logger.Logger
+	Store          *stateful.Store
 }
 
 func (c *CallbackChannel) CallbackShowAllChannel() tgbot.ViewFunc {
@@ -71,8 +74,9 @@ func (c *CallbackChannel) CallbackShowChannelInfo() tgbot.ViewFunc {
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
 			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount, channel.NeedCaptcha))
 		msg.ParseMode = tgbotapi.ModeHTML
+		InfoRequestV2Mrk := markup.InfoRequestV2(channel.AcceptTimer)
 
-		msg.ReplyMarkup = &markup.InfoRequest
+		msg.ReplyMarkup = &InfoRequestV2Mrk
 
 		if _, err := bot.Send(msg); err != nil {
 			c.Log.Error("failed to send msg: %v", err)
@@ -108,8 +112,9 @@ func (c *CallbackChannel) CallbackShowChannelInfoByName() tgbot.ViewFunc {
 		msg := tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID,
 			handler.MessageGetChannelInfo(channel.ChannelName, channel.WaitingCount, userCount, channel.NeedCaptcha))
 		msg.ParseMode = tgbotapi.ModeHTML
+		InfoRequestV2Mrk := markup.InfoRequestV2(channel.AcceptTimer)
 
-		msg.ReplyMarkup = &markup.InfoRequest
+		msg.ReplyMarkup = &InfoRequestV2Mrk
 
 		if _, err := bot.Send(msg); err != nil {
 			c.Log.Error("failed to send msg: %v", err)
@@ -138,5 +143,37 @@ func (c *CallbackChannel) CallbackCaptchaManager() tgbot.ViewFunc {
 
 		return nil
 
+	}
+}
+
+func (c *CallbackChannel) CallbackTimerSetting() tgbot.ViewFunc {
+	return func(ctx context.Context, bot *tgbotapi.BotAPI, update *tgbotapi.Update) error {
+		channelName := findTitle(update.CallbackQuery.Message.Text)
+		c.Log.Info("", channelName)
+
+		userID := update.FromChat().ID
+		messageId := update.CallbackQuery.Message.MessageID
+
+		msg := tgbotapi.NewEditMessageText(userID, messageId, handler.ChannelSetTimer)
+		msg.ReplyMarkup = &markup.CancelCommand
+		msg.ParseMode = tgbotapi.ModeHTML
+
+		msgSend, err := bot.Send(msg)
+		if err != nil {
+			c.Log.Error("failed to send message", zap.Error(err))
+			return err
+		}
+
+		c.Store.Delete(userID)
+		c.Store.Set(&stateful.StoreData{
+			Channel: &stateful.Channel{
+				ChannelName:   channelName,
+				MessageID:     msgSend.MessageID,
+				OperationType: stateful.OperationSetTimer,
+			},
+		}, userID)
+		c.Log.Info(channelName, msgSend.MessageID, stateful.OperationSetTimer)
+
+		return nil
 	}
 }

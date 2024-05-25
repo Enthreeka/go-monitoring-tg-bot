@@ -99,3 +99,6 @@ alter table channel
 
 alter table  "user"
     add is_passed_captcha bool default false;
+
+alter table channel
+    add accept_timer int default 60;
