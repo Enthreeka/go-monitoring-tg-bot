@@ -107,7 +107,7 @@ func (b *Bot) Run(ctx context.Context) error {
 
 			updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
-			b.isDebug = false
+			b.isDebug = true
 			b.jsonDebug(update.Message)
 
 			b.handlerUpdate(updateCtx, &update)
@@ -166,17 +166,6 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 	} else if update.CallbackQuery != nil {
 		b.log.Info("[%s] %s", update.CallbackQuery.From.UserName, update.CallbackData())
 
-		// check if exist some state, with user callback
-		//isExist, err := b.getStateCallback(ctx, update)
-		//if isExist {
-		//	if err != nil {
-		//		b.log.Error("failed to work with state: %v", err)
-		//		handler.HandleError(b.bot, update, boterror.ParseErrToText(err))
-		//		return
-		//	}
-		//	return
-		//}
-
 		var callback ViewFunc
 
 		err, callbackView := b.CallbackStrings(update.CallbackData())
@@ -220,7 +209,8 @@ func (b *Bot) handlerUpdate(ctx context.Context, update *tgbotapi.Update) {
 		// проверка в необходимости капчи по каналу todo: поместить в map
 		if channel.NeedCaptcha == true {
 			// отправка капчи новому пользователю
-			if err := b.sendCaptcha(ctx, req.UserID, update.ChatJoinRequest.Chat.Title); err != nil {
+			// также проверяется нужно ли отправлять опрос через 2 минуты после принятия капчи
+			if err := b.sendCaptcha(ctx, req.UserID, update.ChatJoinRequest.Chat.Title, channel.QuestionEnabled); err != nil {
 				b.log.Error("sendMsgToNewUser: failed to send captcha to new user:%v, request:%v", err, req)
 				return
 			}

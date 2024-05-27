@@ -6,11 +6,12 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
-	"strings"
+	"time"
 )
 
 type ViewGeneral struct {
@@ -18,6 +19,7 @@ type ViewGeneral struct {
 	ChannelService      service.ChannelService
 	NotificationService service.NotificationService
 	Log                 *logger.Logger
+	Store               *stateful.Store
 }
 
 func (v *ViewGeneral) ViewStart() tgbot.ViewFunc {
@@ -50,14 +52,16 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 				return nil
 			}
 		}
-		_, after, exist := strings.Cut(update.Message.Text, "к каналу:")
+
+		channelName, exist := v.Store.ReadCaptcha(userID)
 		if !exist {
-			v.Log.Error("failed to cut channel in CallbackConfirmCaptcha")
+			v.Log.Error("failed to get channel name in Store.ReadCaptcha")
 			return nil
 		}
+		defer v.Store.DeleteCaptcha(userID)
 
 		var channel *entity.Channel
-		channel, err = v.ChannelService.GetByChannelName(ctx, after[1:len(after)-1])
+		channel, err = v.ChannelService.GetByChannelName(ctx, channelName.ChannelName)
 		if err != nil {
 			v.Log.Error("ChannelService.GetByChannelName", zap.Error(err))
 
@@ -79,6 +83,25 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 		if err != nil {
 			v.Log.Error("sender.SendMsgToNewUser", zap.Error(err))
 			return nil
+		}
+
+		if channel.QuestionEnabled {
+			time.AfterFunc(2*time.Minute, func() {
+				question, mrk, err := v.ChannelService.GetQuestion(context.Background(), channel.ChannelName)
+				if err != nil {
+					v.Log.Error("failed to get question", zap.Error(err))
+					return
+				}
+
+				newMsg := tgbotapi.NewMessage(userID, question)
+				newMsg.ParseMode = tgbotapi.ModeHTML
+				newMsg.ReplyMarkup = mrk
+
+				if _, err := bot.Send(newMsg); err != nil {
+					v.Log.Error("failed to send msg: %v", err)
+					return
+				}
+			})
 		}
 
 		return nil

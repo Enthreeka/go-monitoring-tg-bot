@@ -24,6 +24,9 @@ type ChannelRepo interface {
 	GetChannelByUserID(ctx context.Context, userID int64) (string, error)
 	GetChannelByChannelTgID(ctx context.Context, channelTgID int64) (*entity.Channel, error)
 	SetAcceptTimer(ctx context.Context, channelName string, timer int) error
+	UpdateQuestion(ctx context.Context, channelName string, question []byte) error
+	GetQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error)
+	UpdateQuestionEnabledByChannelName(ctx context.Context, channelName string) error
 }
 
 type channelRepo struct {
@@ -38,7 +41,8 @@ func NewChannelRepo(pg *postgres.Postgres) ChannelRepo {
 
 func (u *channelRepo) collectRow(row pgx.Row) (*entity.Channel, error) {
 	var channel entity.Channel
-	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha, &channel.AcceptTimer)
+	err := row.Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName,
+		&channel.ChannelURL, &channel.Status, &channel.NeedCaptcha, &channel.AcceptTimer, &channel.Question, &channel.QuestionEnabled)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, boterror.ErrNoRows
 	}
@@ -139,12 +143,32 @@ func (u *channelRepo) GetByChannelName(ctx context.Context, channelName string) 
 	query := `select * from channel where channel_name = $1`
 	channel := new(entity.Channel)
 
-	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha, &channel.AcceptTimer)
+	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&channel.ID,
+		&channel.TelegramID,
+		&channel.ChannelName,
+		&channel.ChannelURL,
+		&channel.Status,
+		&channel.NeedCaptcha,
+		&channel.AcceptTimer,
+		&channel.Question,
+		&channel.QuestionEnabled,
+	)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return nil, checkErr
 	}
 
 	return channel, err
+}
+
+func (u *channelRepo) UpdateQuestionEnabledByChannelName(ctx context.Context, channelName string) error {
+	query := `update channel set question_enabled = not question_enabled where channel_name = $1;`
+
+	_, err := u.Pool.Exec(ctx, query, channelName)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return checkErr
+	}
+
+	return err
 }
 
 func (u *channelRepo) UpdateNeedCaptchaByChannelName(ctx context.Context, channelName string) error {
@@ -177,7 +201,16 @@ func (u *channelRepo) GetChannelByChannelTgID(ctx context.Context, channelTgID i
 	query := `select * from channel where tg_id = $1`
 	channel := new(entity.Channel)
 
-	err := u.Pool.QueryRow(ctx, query, channelTgID).Scan(&channel.ID, &channel.TelegramID, &channel.ChannelName, &channel.ChannelURL, &channel.Status, &channel.NeedCaptcha)
+	err := u.Pool.QueryRow(ctx, query, channelTgID).Scan(&channel.ID,
+		&channel.TelegramID,
+		&channel.ChannelName,
+		&channel.ChannelURL,
+		&channel.Status,
+		&channel.NeedCaptcha,
+		&channel.AcceptTimer,
+		&channel.Question,
+		&channel.QuestionEnabled,
+	)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return nil, checkErr
 	}
@@ -194,4 +227,25 @@ func (u *channelRepo) SetAcceptTimer(ctx context.Context, channelName string, ti
 	}
 
 	return err
+}
+
+func (u *channelRepo) UpdateQuestion(ctx context.Context, channelName string, question []byte) error {
+	query := `update channel set question = $1 where channel_name = $2`
+
+	_, err := u.Pool.Exec(ctx, query, question, channelName)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return checkErr
+	}
+
+	return err
+}
+
+func (u *channelRepo) GetQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error) {
+	query := `select question from channel where channel_name = $1`
+	var question []byte
+	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&question)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return nil, checkErr
+	}
+	return question, err
 }

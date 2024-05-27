@@ -2,10 +2,12 @@ package tgbot
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
+	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/button"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/markup"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
@@ -24,6 +26,14 @@ var (
 const (
 	success = "Успешно выполнено"
 )
+
+func ParseJSON[T any](src string) (T, error) {
+	var args T
+	if err := json.Unmarshal([]byte(src), &args); err != nil {
+		return *(new(T)), err
+	}
+	return args, nil
+}
 
 func (b *Bot) isStateExist(userID int64) (*stateful.StoreData, bool) {
 	data, exist := b.store.Read(userID)
@@ -159,6 +169,43 @@ func (b *Bot) storeDataChannelOperationType(ctx context.Context, storeData *stat
 			b.log.Error("channelService.SetAcceptTimer: %v", err)
 			return err
 		}
+
+		if err := b.requestTimer(userID, storeData, update); err != nil {
+			b.log.Error("requestTimer: %v", err)
+			return err
+		}
+
+		return nil
+
+	case stateful.OperationUpdateQuestion:
+		args, err := ParseJSON[entity.QuestionModel](update.Text)
+		if err != nil {
+			b.log.Error("ParseJSON: %v", err)
+			return err
+		}
+
+		index := 1
+		for i, _ := range args.Answer {
+			args.Answer[i].ID = index
+			index++
+		}
+
+		questionModelByte, err := json.Marshal(args)
+		if err != nil {
+			b.log.Error("json.Marshal: %v", err)
+			return err
+		}
+
+		if err := b.channelService.UpdateQuestion(ctx, storeData.Channel.ChannelName, questionModelByte); err != nil {
+			b.log.Error("channelService.UpdateQuestion: %v", err)
+			return err
+		}
+
+		if err := b.requestChannel(userID, storeData, update, &args); err != nil {
+			b.log.Error("requestChannel: %v", err)
+			return err
+		}
+
 		return nil
 	}
 
@@ -417,6 +464,26 @@ func (b *Bot) sendAdminSetting(userID int64) error {
 	return nil
 }
 
+func (b *Bot) sendQuestionSetting(userID int64, question *entity.QuestionModel, channelName string) error {
+	newQ, err := json.MarshalIndent(question, "", "  ")
+	if err != nil {
+		b.log.Error("channelRepo.GetByChannelName: failed to marshal exampleModel: %v", err)
+		return err
+	}
+
+	b.log.Info("question: %s", string(newQ))
+	msg := tgbotapi.NewMessage(userID, handler.ChannelUpdateQuestion(string(newQ), channelName))
+	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(button.ComebackSetting))
+	msg.ParseMode = tgbotapi.ModeHTML
+
+	_, err = b.bot.Send(msg)
+	if err != nil {
+		b.log.Error("failed to send message", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
 func (b *Bot) requestNotification(userID int64, storeData *stateful.StoreData, update *tgbotapi.Message) error {
 	_, err := b.bot.Send(tgbotapi.NewMessage(userID, success))
 	if err != nil {
@@ -462,5 +529,39 @@ func (b *Bot) requestAdmin(userID int64, storeData *stateful.StoreData, update *
 		b.log.Error("failed to send msg: %v", err)
 		return err
 	}
+	return nil
+}
+
+func (b *Bot) requestChannel(userID int64, storeData *stateful.StoreData, update *tgbotapi.Message, question *entity.QuestionModel) error {
+	_, err := b.bot.Send(tgbotapi.NewMessage(userID, success))
+	if err != nil {
+		b.log.Error("failed to send msg: %v", err)
+		return err
+	}
+
+	if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+		storeData.Channel.MessageID)); nil != err || !resp.Ok {
+		b.log.Error("failed to delete message id %d (%s): %v", storeData.Admin.MessageID, string(resp.Result), err)
+	}
+
+	if resp, err := b.bot.Request(tgbotapi.NewDeleteMessage(userID,
+		update.MessageID)); nil != err || !resp.Ok {
+		b.log.Error("failed to delete message id %d (%s): %v", storeData.Admin.MessageID, string(resp.Result), err)
+	}
+
+	if err := b.sendQuestionSetting(userID, question, storeData.Channel.ChannelName); err != nil {
+		b.log.Error("failed to send msg: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (b *Bot) requestTimer(userID int64, storeData *stateful.StoreData, update *tgbotapi.Message) error {
+	_, err := b.bot.Send(tgbotapi.NewMessage(userID, success))
+	if err != nil {
+		b.log.Error("failed to send msg: %v", err)
+		return err
+	}
+
 	return nil
 }

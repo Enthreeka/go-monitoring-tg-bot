@@ -102,3 +102,9 @@ alter table  "user"
 
 alter table channel
     add accept_timer int default 60;
+
+alter table channel
+    add question json;
+
+alter table channel
+    add question_enabled boolean default false;

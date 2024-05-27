@@ -163,13 +163,19 @@ func InfoRequestV2(time int) tgbotapi.InlineKeyboardMarkup {
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Включить/Отключить капчу", "captcha_manager")),
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Включить/Отключить опрос после капчи", "question_handbrake")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Создать/Изменить опрос после капчи", "question_manager")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отправить пример опроса после капчи", "question_example")),
+		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Настройка приветственного сообщения", "hello_setting")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Настройка рассылки по базе", "sender_setting")),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("Принять через установленное время: %dм", time), "approved_time")),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Назначить время принятия", "time_setting")),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("Принять в установленное время: 16:00 и 10:00"), "approved_time")),
+		//tgbotapi.NewInlineKeyboardRow(
+		//	tgbotapi.NewInlineKeyboardButtonData("Назначить время принятия", "time_setting")),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Статистика за день", "get_statistic")),
 		tgbotapi.NewInlineKeyboardRow(

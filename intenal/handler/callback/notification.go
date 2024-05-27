@@ -169,14 +169,28 @@ func (c *CallbackNotification) CallbackCancelNotificationSetting() tgbot.ViewFun
 			msg tgbotapi.EditMessageTextConfig
 		)
 
-		if data.Notification.ChannelName != "" {
+		switch {
+		case data.Channel != nil && data.Channel.OperationType == stateful.OperationUpdateQuestion:
+			channelMarkup, err := c.ChannelService.GetAllAdminChannel(ctx)
+			if err != nil {
+				c.Log.Error("channelService.GetAllAdminChannel: failed to get channel: %v", err)
+				handler.HandleError(bot, update, boterror.ParseErrToText(err))
+				return nil
+			}
+
+			msg = tgbotapi.NewEditMessageText(update.FromChat().ID, update.CallbackQuery.Message.MessageID, handler.MessageShowAllChannel)
+			msg.ParseMode = tgbotapi.ModeHTML
+			msg.ReplyMarkup = channelMarkup
+
+		case data.Notification != nil && data.Notification.ChannelName != "":
 			channelName := data.Notification.ChannelName
 
 			msg = tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID,
 				handler.NotificationSettingText(channelName))
 			msg.ReplyMarkup = &markup.HelloMessageSetting
 			msg.ParseMode = tgbotapi.ModeHTML
-		} else {
+
+		default:
 			msg = tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID,
 				handler.NotificationGlobalSetting)
 			msg.ReplyMarkup = &markup.GlobalHelloMessageSetting

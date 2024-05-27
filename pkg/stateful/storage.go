@@ -18,6 +18,8 @@ const (
 	OperationDeleteBot = "delete_bot"
 
 	OperationSetTimer = "set_timer"
+
+	OperationUpdateQuestion = "update_question"
 )
 
 type Channel struct {
@@ -63,13 +65,21 @@ type Store struct {
 	store                  map[int64]*StoreData
 	totalSuccessfulSentMsg map[int64]channelStat
 
+	userCaptcha map[int64]Captcha
+
 	mu sync.RWMutex
+}
+
+type Captcha struct {
+	ChannelName string
+	Expire      time.Time
 }
 
 func NewStore() *Store {
 	return &Store{
 		store:                  make(map[int64]*StoreData, 15),
 		totalSuccessfulSentMsg: make(map[int64]channelStat),
+		userCaptcha:            make(map[int64]Captcha, 100),
 	}
 }
 
@@ -100,47 +110,4 @@ func (s *Store) Delete(userID int64) {
 type channelStat struct {
 	countSend int64
 	day       int
-}
-
-func (s *Store) IncrementSuccessfulSentMsg(channelID int64) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	today := time.Now().Day()
-
-	if d, ok := s.totalSuccessfulSentMsg[channelID]; !ok {
-
-		s.totalSuccessfulSentMsg[channelID] = channelStat{
-			day:       today,
-			countSend: 1,
-		}
-
-	} else {
-
-		if d.day != today {
-			s.totalSuccessfulSentMsg[channelID] = channelStat{
-				day:       today,
-				countSend: 1,
-			}
-
-		} else {
-			s.totalSuccessfulSentMsg[channelID] = channelStat{
-				day:       today,
-				countSend: d.countSend + 1,
-			}
-		}
-
-	}
-}
-
-func (s *Store) GetSuccessfulSentMsg(channelID int64) (int, int64) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	day := time.Now().Day()
-	d, ok := s.totalSuccessfulSentMsg[channelID]
-	if !ok {
-		return day, 0
-	}
-	return d.day, d.countSend
 }

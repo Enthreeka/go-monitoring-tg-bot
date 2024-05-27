@@ -58,7 +58,7 @@ func (b *Bot) initServices(psql *postgres.Postgres, log *logger.Logger) {
 	b.userService = service.NewUserService(userRepo, requestRepo, channelRepo, log)
 	b.requestService = service.NewRequestService(requestRepo, log)
 	b.notificationService = service.NewNotificationService(notificationRepo, channelRepo, log)
-	b.channelService = service.NewChannelService(channelRepo, log)
+	b.channelService = service.NewChannelService(channelRepo, log, b.store)
 	b.senderService = service.NewSenderService(senderRepo, channelRepo)
 	b.spamBotService = service.NewSpamBotService(userRepo, spamBotRepo, b.spammerStorage, log)
 }
@@ -69,6 +69,7 @@ func (b *Bot) initHandlers(log *logger.Logger) {
 		ChannelService:      b.channelService,
 		NotificationService: b.notificationService,
 		Log:                 log,
+		Store:               b.store,
 	}
 	b.channelCallbackHandler = callback.CallbackChannel{
 		ChannelService: b.channelService,
@@ -117,7 +118,7 @@ func (b *Bot) initExcel(log *logger.Logger) {
 }
 
 func (b *Bot) initialize(ctx context.Context, log *logger.Logger) {
-	b.initStore()
+	b.initStore(ctx)
 	b.initExcel(log)
 	//b.initSpamBotConstructor(log)
 	b.initServices(b.psql, log)
@@ -125,8 +126,10 @@ func (b *Bot) initialize(ctx context.Context, log *logger.Logger) {
 	//b.initSpamStorage(ctx)
 }
 
-func (b *Bot) initStore() {
+func (b *Bot) initStore(ctx context.Context) {
 	b.store = stateful.NewStore()
+
+	go b.store.Worker(ctx, 60)
 }
 
 func (b *Bot) initSpamBotConstructor(log *logger.Logger) {
@@ -210,6 +213,10 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	newBot.RegisterCommandCallback("captcha_manager", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackCaptchaManager()))
 	newBot.RegisterCommandCallback("time_setting", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackTimerSetting()))
+	newBot.RegisterCommandCallback("question_example", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackGetQuestionExample()))
+	newBot.RegisterCommandCallback("question_manager", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackQuestionManager()))
+	newBot.RegisterCommandCallback("answer", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackGetAnswer()))
+	newBot.RegisterCommandCallback("question_handbrake", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackQuestionHandbrake()))
 
 	//newBot.RegisterCommandCallback("press_captcha", b.generalCallbackHandler.CallbackConfirmCaptcha())
 	if err := newBot.Run(ctx); err != nil {

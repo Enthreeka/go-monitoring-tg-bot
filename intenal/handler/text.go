@@ -9,18 +9,26 @@ const (
 	MessageShowAllChannel = `<strong>Ниже представлен список каналов, в которых бот является администратором</strong>`
 )
 
-func MessageGetChannelInfo(channel string, waitingCount int, userCount int, isExistCaptcha bool) string {
+func MessageGetChannelInfo(channel string, waitingCount int, userCount int, isExistCaptcha bool, questionEnabled bool) string {
 	var isExistCaptchaStr string
 	if isExistCaptcha == true {
 		isExistCaptchaStr = "Да"
 	} else {
 		isExistCaptchaStr = "Нет"
 	}
+	var questionEnabledStr string
+	if questionEnabled == true {
+		questionEnabledStr = "Да"
+	} else {
+		questionEnabledStr = "Нет"
+	}
+
 	return fmt.Sprintf("<strong>Управление каналом</strong>\n"+
 		"Канал:<i>%s</i> \n"+
-		"Капча включена: %s\n\n"+
+		"Капча включена: %s\n"+
+		"Опрос после капчи включен: %s\n\n"+
 		"Количество людей, которые ожидают принятия: %d\n\n"+
-		"Количество людей в базе бота по данному каналу: %d", channel, isExistCaptchaStr, waitingCount, userCount)
+		"Количество людей в базе бота по данному каналу: %d", channel, isExistCaptchaStr, questionEnabledStr, waitingCount, userCount)
 }
 
 const (
@@ -120,3 +128,10 @@ func BotCaptcha(channel string) string {
 const (
 	ChannelSetTimer = "Отправьте время в минутах, для авто принятия пользователей"
 )
+
+func ChannelUpdateQuestion(question string, channel string) string {
+	return fmt.Sprintf("Канал:<i>%s</i> \n"+
+		"Ниже представлены поля данного опроса:\n\n%s"+
+		"\n\nЕсли хотите изменить опрос, отправьте его с измененными полями в формате JSON. Если не хотите менять, нажмите"+
+		" кнопку отменить команду", channel, question)
+}
