@@ -60,10 +60,15 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 		}
 		defer v.Store.DeleteCaptcha(userID)
 
+		v.Log.Info("getting data from store with captcha: %v", channelName)
+
 		var channel *entity.Channel
 		channel, err = v.ChannelService.GetByChannelName(ctx, channelName.ChannelName)
 		if err != nil {
 			v.Log.Error("ChannelService.GetByChannelName", zap.Error(err))
+			if channel == nil {
+				channel = &entity.Channel{}
+			}
 
 			channel.ChannelName, err = v.ChannelService.GetChannelByUserID(ctx, userID)
 			if err != nil {

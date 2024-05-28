@@ -120,24 +120,14 @@ func (b *Bot) initExcel(log *logger.Logger) {
 func (b *Bot) initialize(ctx context.Context, log *logger.Logger) {
 	b.initStore(ctx)
 	b.initExcel(log)
-	//b.initSpamBotConstructor(log)
 	b.initServices(b.psql, log)
 	b.initHandlers(log)
-	//b.initSpamStorage(ctx)
 }
 
 func (b *Bot) initStore(ctx context.Context) {
 	b.store = stateful.NewStore()
 
 	go b.store.Worker(ctx, 60)
-}
-
-func (b *Bot) initSpamBotConstructor(log *logger.Logger) {
-	b.spammerStorage = spam.NewSpammerBot(log)
-}
-
-func (b *Bot) initSpamStorage(ctx context.Context) {
-	b.spamBotService.GetSpamBotsFromDBToCache(ctx)
 }
 
 func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
