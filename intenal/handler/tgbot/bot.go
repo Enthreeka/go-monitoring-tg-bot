@@ -107,7 +107,7 @@ func (b *Bot) Run(ctx context.Context) error {
 
 			updateCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
-			b.isDebug = true
+			b.isDebug = false
 			b.jsonDebug(update.Message)
 
 			b.handlerUpdate(updateCtx, &update)

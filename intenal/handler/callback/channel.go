@@ -326,12 +326,12 @@ func (c *CallbackChannel) CallbackGetAnswer() tgbot.ViewFunc {
 		for _, answer := range model.Answer {
 			if answer.ID == answerIDInt {
 
-				msg := tgbotapi.NewMessage(userID, answer.TextResult)
+				msg := tgbotapi.NewEditMessageText(userID, update.CallbackQuery.Message.MessageID, answer.TextResult)
 				if answer.Url != "" && entity.IsValidURL(answer.Url) {
 					urlButton := tgbotapi.NewInlineKeyboardButtonURL("ССЫЛКА", answer.Url)
 					row := []tgbotapi.InlineKeyboardButton{urlButton}
 					keyboard := tgbotapi.NewInlineKeyboardMarkup(row)
-					msg.ReplyMarkup = keyboard
+					msg.ReplyMarkup = &keyboard
 				}
 
 				_, err := bot.Send(msg)

@@ -85,8 +85,8 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 			return nil
 		}
 
-		if channel.QuestionEnabled {
-			time.AfterFunc(2*time.Minute, func() {
+		if channel.QuestionEnabled && channel.Question != nil {
+			time.AfterFunc(10*time.Second, func() {
 				question, mrk, err := v.ChannelService.GetQuestion(context.Background(), channel.ChannelName)
 				if err != nil {
 					v.Log.Error("failed to get question", zap.Error(err))

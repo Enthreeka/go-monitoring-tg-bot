@@ -30,7 +30,7 @@ type QuestionModel struct {
 }
 
 type Answer struct {
-	ID              int    `json:"-"`
+	ID              int    `json:"id"`
 	AnswerVariation string `json:"answer_variation"`
 	Url             string `json:"url"`
 	TextResult      string `json:"text_result"`
