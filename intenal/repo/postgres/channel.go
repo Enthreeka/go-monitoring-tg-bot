@@ -27,6 +27,7 @@ type ChannelRepo interface {
 	UpdateQuestion(ctx context.Context, channelName string, question []byte) error
 	GetQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error)
 	UpdateQuestionEnabledByChannelName(ctx context.Context, channelName string) error
+	GetChannelAfterConfirm(ctx context.Context, userID int64) (*entity.Channel, error)
 }
 
 type channelRepo struct {
@@ -248,4 +249,27 @@ func (u *channelRepo) GetQuestionByChannelName(ctx context.Context, channelName 
 		return nil, checkErr
 	}
 	return question, err
+}
+
+func (u *channelRepo) GetChannelAfterConfirm(ctx context.Context, userID int64) (*entity.Channel, error) {
+	q := `select c.channel_name,c.question,c.question_enabled from channel c
+			join user_channel uc on uc.channel_tg_id = c.tg_id
+			join "user" u on u.id = uc.user_id
+			join request r on r.user_id = u.id and r.channel_tg_id = c.tg_id
+			where u.id = $1
+		ORDER BY r.id desc
+		limit 1`
+
+	channel := new(entity.Channel)
+
+	err := u.Pool.QueryRow(ctx, q, userID).Scan(
+		&channel.ChannelName,
+		&channel.Question,
+		&channel.QuestionEnabled,
+	)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return nil, checkErr
+	}
+
+	return channel, err
 }

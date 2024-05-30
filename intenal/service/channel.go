@@ -29,6 +29,7 @@ type ChannelService interface {
 	UpdateQuestion(ctx context.Context, channelName string, question []byte) error
 	GetQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error)
 	UpdateQuestionEnabledByChannelName(ctx context.Context, channelName string) error
+	GetChannelAfterConfirm(ctx context.Context, userID int64) (*entity.Channel, error)
 }
 
 type channelService struct {
@@ -206,4 +207,8 @@ func (c *channelService) GetQuestionByChannelName(ctx context.Context, channelNa
 
 func (c *channelService) UpdateQuestionEnabledByChannelName(ctx context.Context, channelName string) error {
 	return c.channelRepo.UpdateQuestionEnabledByChannelName(ctx, channelName)
+}
+
+func (c *channelService) GetChannelAfterConfirm(ctx context.Context, userID int64) (*entity.Channel, error) {
+	return c.channelRepo.GetChannelAfterConfirm(ctx, userID)
 }

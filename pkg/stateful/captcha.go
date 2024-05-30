@@ -29,8 +29,8 @@ func (s *Store) Worker(ctx context.Context, minute int) {
 
 func (s *Store) SetCaptcha(data Captcha, userID int64) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.userCaptcha[userID] = data
+	s.mu.Unlock()
 }
 
 func (s *Store) ReadCaptcha(userID int64) (Captcha, bool) {
@@ -47,8 +47,8 @@ func (s *Store) ReadCaptcha(userID int64) (Captcha, bool) {
 
 func (s *Store) DeleteCaptcha(userID int64) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	delete(s.userCaptcha, userID)
+	s.mu.Unlock()
 }
 
 func (s *Store) RangeCaptcha(f func(key int64, value Captcha) error) error {

@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/handler/tgbot"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/service"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -53,29 +52,17 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 			}
 		}
 
-		channelName, exist := v.Store.ReadCaptcha(userID)
-		if !exist {
-			v.Log.Error("failed to get channel name in Store.ReadCaptcha")
-			return nil
-		}
-		defer v.Store.DeleteCaptcha(userID)
-
-		v.Log.Info("getting data from store with captcha: %v", channelName)
-
-		var channel *entity.Channel
-		channel, err = v.ChannelService.GetByChannelName(ctx, channelName.ChannelName)
+		channel, err := v.ChannelService.GetChannelAfterConfirm(ctx, userID)
 		if err != nil {
-			v.Log.Error("ChannelService.GetByChannelName", zap.Error(err))
-			if channel == nil {
-				channel = &entity.Channel{}
-			}
-
+			v.Log.Error("ChannelService.GetChannelAfterConfirm: %v", err)
 			channel.ChannelName, err = v.ChannelService.GetChannelByUserID(ctx, userID)
 			if err != nil {
 				v.Log.Error("ChannelService.GetChannelByUserID", zap.Error(err))
 				return nil
 			}
 		}
+
+		v.Log.Info("Channel - %v", channel)
 
 		noritifcation, err := v.NotificationService.GetByChannelName(ctx, channel.ChannelName)
 		if err != nil || noritifcation == nil {
@@ -91,7 +78,7 @@ func (v *ViewGeneral) ViewConfirmCaptcha() tgbot.ViewFunc {
 		}
 
 		if channel.QuestionEnabled && channel.Question != nil {
-			time.AfterFunc(10*time.Second, func() {
+			time.AfterFunc(2*time.Minute, func() {
 				question, mrk, err := v.ChannelService.GetQuestion(context.Background(), channel.ChannelName)
 				if err != nil {
 					v.Log.Error("failed to get question", zap.Error(err))
