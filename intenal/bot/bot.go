@@ -15,9 +15,6 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/spam"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
-	"net/http"
-	"net/http/pprof"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -155,8 +152,6 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 
 	b.initialize(ctx, log)
 
-	go profiler("localhost:8080")
-
 	newBot := tgbot.NewBot(bot, log, b.store, b.spammerStorage, b.requestService, b.userService, b.channelService, b.notificationService, b.senderService, b.spamBotService)
 
 	newBot.RegisterCommandView("start", middleware.AdminMiddleware(b.userService, b.generalViewHandler.ViewStart()))
@@ -219,18 +214,4 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 		log.Error("failed to run tgbot: %v", err)
 	}
 	return nil
-}
-
-func profiler(addr string) {
-	go func() {
-		r := http.NewServeMux()
-		r.HandleFunc("/debug/pprof/", pprof.Index)
-		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
-		if err := http.ListenAndServe(addr, r); err != nil {
-			log.Fatalf("listen profiler: %v", err)
-		}
-	}()
 }

@@ -28,6 +28,7 @@ type ChannelRepo interface {
 	GetQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error)
 	UpdateQuestionEnabledByChannelName(ctx context.Context, channelName string) error
 	GetChannelAfterConfirm(ctx context.Context, userID int64) (*entity.Channel, error)
+	LikeQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error)
 }
 
 type channelRepo struct {
@@ -245,6 +246,18 @@ func (u *channelRepo) GetQuestionByChannelName(ctx context.Context, channelName 
 	query := `select question from channel where channel_name = $1`
 	var question []byte
 	err := u.Pool.QueryRow(ctx, query, channelName).Scan(&question)
+	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
+		return nil, checkErr
+	}
+	return question, err
+}
+
+func (u *channelRepo) LikeQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error) {
+	query := `SELECT question FROM channel WHERE channel_name LIKE $1`
+	var question []byte
+
+	likePattern := channelName + "%"
+	err := u.Pool.QueryRow(ctx, query, likePattern).Scan(&question)
 	if checkErr := pgxError.ErrorHandler(err); checkErr != nil {
 		return nil, checkErr
 	}

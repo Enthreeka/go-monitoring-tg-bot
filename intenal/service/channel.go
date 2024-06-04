@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/Entreeka/monitoring-tg-bot/intenal/boterror"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/entity"
 	"github.com/Entreeka/monitoring-tg-bot/intenal/repo/postgres"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/logger"
@@ -156,6 +158,9 @@ func (c *channelService) GetQuestion(ctx context.Context, channelName string) (s
 		return "", nil, err
 	}
 
+	if len(channelName) > 30 {
+		channelName = channelName[:30]
+	}
 	baseChannel := base64.StdEncoding.EncodeToString([]byte(channelName))
 
 	questionModel := new(entity.QuestionModel)
@@ -183,8 +188,9 @@ func (c *channelService) createQuestionMarkup(questionModel *entity.QuestionMode
 	for i, el := range questionModel.Answer {
 		btn := tgbotapi.NewInlineKeyboardButtonData(el.AnswerVariation,
 			fmt.Sprintf("answer_%s_%d", questionModel.ChanelNameBase64, el.ID))
-
 		row = append(row, btn)
+
+		fmt.Println(fmt.Sprintf("answer_%s_%d", questionModel.ChanelNameBase64, el.ID))
 
 		if (i+1)%buttonsPerRow == 0 || i == len(questionModel.Answer)-1 {
 			rows = append(rows, row)
@@ -202,7 +208,21 @@ func (c *channelService) UpdateQuestion(ctx context.Context, channelName string,
 }
 
 func (c *channelService) GetQuestionByChannelName(ctx context.Context, channelName string) ([]byte, error) {
-	return c.channelRepo.GetQuestionByChannelName(ctx, channelName)
+	channelByte, err := c.channelRepo.GetQuestionByChannelName(ctx, channelName)
+	if err != nil {
+		if errors.Is(err, boterror.ErrNoRows) {
+			channelByte, err = c.channelRepo.LikeQuestionByChannelName(ctx, channelName)
+			if err != nil {
+				c.log.Error("GetQuestionByChannelName: channelRepo.LikeQuestionByChannelName: %v", err)
+				return nil, err
+			}
+			return channelByte, nil
+		}
+		c.log.Error("GetQuestionByChannelName: channelRepo.GetQuestionByChannelName: %v", err)
+		return nil, err
+	}
+
+	return channelByte, nil
 }
 
 func (c *channelService) UpdateQuestionEnabledByChannelName(ctx context.Context, channelName string) error {
