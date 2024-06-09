@@ -206,7 +206,7 @@ func (b *Bot) Run(log *logger.Logger, cfg *config.Config) error {
 	newBot.RegisterCommandCallback("time_setting", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackTimerSetting()))
 	newBot.RegisterCommandCallback("question_example", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackGetQuestionExample()))
 	newBot.RegisterCommandCallback("question_manager", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackQuestionManager()))
-	newBot.RegisterCommandCallback("answer", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackGetAnswer()))
+	newBot.RegisterCommandCallback("answer", b.channelCallbackHandler.CallbackGetAnswer())
 	newBot.RegisterCommandCallback("question_handbrake", middleware.AdminMiddleware(b.userService, b.channelCallbackHandler.CallbackQuestionHandbrake()))
 
 	//newBot.RegisterCommandCallback("press_captcha", b.generalCallbackHandler.CallbackConfirmCaptcha())
