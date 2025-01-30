@@ -13,6 +13,7 @@ import (
 	"github.com/Entreeka/monitoring-tg-bot/pkg/stateful"
 	"github.com/Entreeka/monitoring-tg-bot/pkg/tg/button"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"unicode/utf8"
 )
 
 type ChannelService interface {
@@ -158,7 +159,7 @@ func (c *channelService) GetQuestion(ctx context.Context, channelName string) (s
 		return "", nil, err
 	}
 
-	if len(channelName) > 30 {
+	if utf8.RuneCountInString(channelName) > 30 {
 		channelName = channelName[:30]
 	}
 	baseChannel := base64.StdEncoding.EncodeToString([]byte(channelName))
@@ -190,7 +191,7 @@ func (c *channelService) createQuestionMarkup(questionModel *entity.QuestionMode
 			fmt.Sprintf("answer_%s_%d", questionModel.ChanelNameBase64, el.ID))
 		row = append(row, btn)
 
-		fmt.Println(fmt.Sprintf("answer_%s_%d", questionModel.ChanelNameBase64, el.ID))
+		//fmt.Println(fmt.Sprintf("answer_%s_%d", questionModel.ChanelNameBase64, el.ID))
 
 		if (i+1)%buttonsPerRow == 0 || i == len(questionModel.Answer)-1 {
 			rows = append(rows, row)
